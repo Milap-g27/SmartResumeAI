@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+pydantic>=2.11
+langchain-groq
+langgraph
+langchain-core
+pdfplumber
+python-docx
+reportlab
