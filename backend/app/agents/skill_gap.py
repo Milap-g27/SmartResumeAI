@@ -20,14 +20,13 @@ You receive:
 
 1. Extract ALL required skills/technologies/competencies from the job description.
 2. For each JD skill, determine if the resume covers it through:
-   - **EXACT match**: Resume explicitly lists the same skill (e.g. JD: "Python", Resume: "Python")
-   - **SEMANTIC match**: Resume lists a parent/related skill that logically covers the JD skill.
-
-**SEMANTIC MATCHING RULES:**
-- "logistic regression", "classification models", "time series analysis", "forecasting", "predictive modeling", "statistical modeling" are SUBSETS of "Machine Learning", "Supervised Learning", "Statistical Methods", "Deep Learning". If resume has the parent, mark as semantic match.
-- "NLP", "Computer Vision", "Deep Learning" are subsets of "Machine Learning" / "AI".
-- If resume mentions "Predictive Models" or "Predictive Modeling", treat as covering "forecasting", "time series analysis", etc.
-- If resume contains "SQL" or "Structured Query Language" or "relational database" or "strong database skills", NEVER mark SQL as missing. MongoDB + structured querying = partial SQL coverage (confidence 0.5+).
+**SEMANTIC MATCHING RULES - YOU MUST APPLY INTELLIGENT, DYNAMIC REASONING:**
+- **Level of Abstraction:** You must constantly bridge the gap between "Specific Tool/Service" and "Broad Capability/Category". Do not rely on exact keyword matches if the underlying concepts are identical.
+- **Provider Equivalence:** If a JD asks for a broad capability (e.g., "Cloud Computing", "DevOps", "Infrastructure as Code", "Vector Databases", "Production APIs"), and the resume lists ANY specific tool that fulfills that capability (e.g., "AWS EC2/GCP Compute" for Cloud, "Docker/Jenkins/Terraform" for DevOps, "FAISS/Pinecone" for Vector DBs, "FastAPI" for APIs), it MUST be scored as a strong **Semantic Match** or even **Exact Match**.
+- **Specialization to Generalization:** If a candidate has a specialized version of a skill (e.g., "Time Series Forecasting", "NLP", "CNNs"), they inherently possess the parent skill (e.g., "Machine Learning", "Data Science").
+- **Framework to Language:** If a candidate extensively uses a framework (e.g., React, Django, Spring Boot), assume they possess the underlying language skill (e.g., JavaScript, Python, Java).
+- **Relational Databases:** If a candidate mentions SQL, PostgreSQL, MySQL, etc., they satisfy requirements for "RDBMS", "Relational Databases", or "SQL querying".
+- **BE SMART, CHARITABLE, AND EXPERT-LEVEL:** You are evaluating a human's capabilities. If they can deploy an agentic AI workflow to Kubernetes, they know "DevOps". If they use LangChain, they know "Generative AI". Connect the dots using your deep technical knowledge of the modern software/AI ecosystem.
 
 **CONFIDENCE SCORING:**
 - Direct parent skill covers child: 0.70–0.85

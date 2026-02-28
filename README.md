@@ -1,45 +1,31 @@
 # 🚀 Smart Resume Builder + Interview Coach
 
-> **Collaborative Multi-Agent System (CMAS)** — AI-powered resume analysis, ATS scoring, skill-gap detection, and interview coaching.
+> **Collaborative Multi-Agent System (CMAS)** — AI-powered resume analysis, ATS scoring, skill-gap detection, and comprehensive interview coaching.
+
+Smart Resume Builder + Interview Coach is an intelligent, comprehensive career advancement platform designed to help job seekers optimize their applications and prepare for interviews with confidence. Powered by a sophisticated multi-agent AI system, the application acts as a personal career coach, guiding users from the initial resume review to final interview preparation.
 
 ---
 
-## 🏗 Architecture
+## 🎯 What This App Does
 
-```
-User Input → FastAPI Backend → LangGraph Pipeline
-                                    │
-                    ┌───────────────┤
-                    ▼               ▼
-            Resume Analyzer    (PDF/DOCX Parser)
-                    │
-                    ▼
-            Skill Gap Agent
-                    │
-                    ▼
-            ATS Optimizer
-                    │
-                    ▼
-          Interview Generator
-                    │
-                    ▼
-            Dashboard Output
-                    
-            Mock Interview Agent  ← (separate endpoint)
-```
+In today's competitive job market, getting past the Applicant Tracking System (ATS) and excelling in interviews can be daunting. This application bridges the gap between your experience and your dream job by offering:
 
-### 5 Specialized Agents
+- **Intelligent ATS Optimization:** Automatically analyzes your resume against target job descriptions, scores it for ATS compatibility, and intelligently rewrites bullet points to highlight impact and metrics.
+- **Skill Gap Analysis:** Pinpoints exactly which required skills are missing from your resume and suggests actionable learning paths.
+- **Personalized Interview Prep:** Generates role-specific interview questions based on your unique experience and the target job description.
+- **Interactive Mock Interviews:** Simulates real interview scenarios with an AI agent that evaluates your typed answers for clarity, depth, and communication skills, providing real-time feedback.
 
-| # | Agent | Purpose |
-|---|-------|---------|
-| 1 | **Resume Analyzer** | Parses resume, detects sections, evaluates quality, identifies weak bullets |
-| 2 | **Skill Gap** | Extracts JD requirements, compares with resume skills, suggests learning paths |
-| 3 | **ATS Optimizer** | Scores for ATS (0–100), rewrites bullets with action verbs & metrics, generates optimized resume |
-| 4 | **Interview Generator** | Creates 15 questions (technical, project, behavioral) from resume + JD context |
-| 5 | **Mock Interview** | Evaluates typed answers on clarity, depth, communication, confidence |
+---
 
-### ATS Score Formula
+## 🌟 Key Features
 
+### 1. 📄 Deep Resume Analysis
+The platform doesn't just read your resume; it understands it. It breaks down your document (PDF or DOCX) into core sections, evaluates the quality of your content, and identifies weak or vague bullet points that need improvement.
+
+### 2. ⚡ AI-Driven Resume Re-writing
+Struggling to find the right action verbs? The **ATS Optimizer** revamps your experience bullet points, ensuring they are metrics-driven, impactful, and perfectly aligned with the job description.
+
+**ATS Score Formula Integration:**
 | Component | Weight |
 |-----------|--------|
 | Keyword Match | 40% |
@@ -47,188 +33,45 @@ User Input → FastAPI Backend → LangGraph Pipeline
 | Experience Relevance | 20% |
 | Formatting & Structure | 15% |
 
----
+### 3. 🎯 Skill Match & Gap Detection
+By comparing your parsed resume against a provided job description, the application identifies explicit and implicit skills you possess, while highlighting critical gaps you need to address to become the ideal candidate.
 
-## 🛠 Tech Stack
+### 4. 🎤 Smart Interview Generation
+Generic interview questions aren't enough. The **Interview Generator** crafts 15 highly targeted questions covering technical, project-specific, and behavioral domains, all tailored to the intersection of your resume and the target role.
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React (Vite) |
-| Backend | FastAPI |
-| Agent Orchestration | LangGraph |
-| LLM | ChatGroq (`llama-3.3-70b-versatile`) |
-| File Parsing | pdfplumber + python-docx |
-| Tracing | LangSmith |
+### 5. 💬 Real-time Mock Interviews
+Engage in a dialog with our **Mock Interview Coach**. Submit your answers and receive immediate, constructive feedback on your confidence, communication style, and technical depth.
 
 ---
 
-## 📁 Project Structure
+## 🏗 The AI Architecture
 
-```
-Ballu/
-├── backend/
-│   ├── .env.example
-│   ├── requirements.txt
-│   ├── uploads/
-│   └── app/
-│       ├── main.py          # FastAPI app
-│       ├── graph.py          # LangGraph orchestration
-│       ├── agents/
-│       │   ├── resume_analyzer.py
-│       │   ├── skill_gap.py
-│       │   ├── ats_optimizer.py
-│       │   ├── interview_generator.py
-│       │   └── mock_interview.py
-│       ├── routes/
-│       │   ├── analyze.py    # POST /analyze
-│       │   ├── interview.py  # POST /mock-interview
-│       │   └── session.py    # GET /session/{id}
-│       ├── services/
-│       │   ├── file_parser.py
-│       │   └── session_store.py
-│       └── schemas/
-│           └── models.py
-└── frontend/
-    ├── package.json
-    ├── vite.config.js
-    ├── index.html
-    └── src/
-        ├── App.jsx
-        ├── index.css
-        ├── main.jsx
-        ├── api/
-        │   └── client.js
-        ├── components/
-        │   ├── FileUpload.jsx
-        │   ├── JobDescriptionInput.jsx
-        │   ├── AtsScoreMeter.jsx
-        │   ├── TabPanel.jsx
-        │   ├── InterviewCard.jsx
-        │   └── MockInterview.jsx
-        └── pages/
-            ├── HomePage.jsx
-            └── ResultsPage.jsx
-```
+The core of the application is a **Collaborative Multi-Agent System (CMAS)** built with LangGraph. Rather than relying on a single static prompt, the app utilizes 5 specialized AI agents that work together in a coordinated pipeline:
+
+1. **Resume Analyzer Agent:** Parses the document to extract structural data and initial quality assessments.
+2. **Skill Gap Agent:** Performs comparative analysis between the user's skills and the job requirements.
+3. **ATS Optimizer Agent:** Calculates a comprehensive ATS score across Keyword Match, Skill Coverage, Experience Relevance, and Formatting, generating a freshly optimized resume.
+4. **Interview Generator Agent:** Synthesizes the previous analyses to formulate highly context-aware, role-specific interview questions.
+5. **Mock Interview Agent:** Operates dynamically to assess user responses during practice sessions.
+
+### Agent Collaboration Flow
+Each agent builds sequentially on the previous agent's insights by appending to a shared, stateful graph without overwriting context. This results in a holistic, highly intelligent output generation.
 
 ---
 
-## ⚡ Quick Start
+## 🎨 A Premium User Experience
 
-### 1. Clone & Configure
-
-```bash
-cd Ballu/backend
-copy .env.example .env
-# Edit .env → add your GROQ_API_KEY
-```
-
-### 2. Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open **http://localhost:5173** in your browser.
+The application is designed with a modern, FAANG-level user interface featuring:
+- **Sleek Dark & Light Themes** highlighting premium aesthetics with glassmorphism.
+- **Intuitive Visualizations**, including animated circular ATS meters and responsive tabbed dashboards.
+- **Seamless Workflows** from drag-and-drop file uploads to one-click copy functionality for your newly optimized resume.
 
 ---
 
-## 🔌 API Endpoints
+## 🛠 Built With
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/analyze` | Upload resume (PDF/DOCX) + job description → full analysis |
-| `POST` | `/mock-interview` | Submit answer to an interview question → feedback |
-| `GET` | `/session/{id}` | Retrieve stored analysis session |
-| `GET` | `/health` | Health check |
-
-### POST /analyze
-
-```bash
-curl -X POST http://localhost:8000/analyze \
-  -F "resume=@resume.pdf" \
-  -F "job_description=Senior Python Developer..."
-```
-
-### POST /mock-interview
-
-```bash
-curl -X POST http://localhost:8000/mock-interview \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "...", "question": "...", "answer": "..."}'
-```
-
----
-
-## 🔄 Agent Collaboration Flow
-
-```
-User uploads resume + pastes JD
-         │
-         ▼
-┌─────────────────────┐
-│  Resume Analyzer     │ → Parses text, detects sections, rates quality
-│  Output: resume_analysis │
-└─────────┬───────────┘
-          ▼
-┌─────────────────────┐
-│  Skill Gap Agent     │ → Compares resume skills vs JD requirements
-│  Input: resume_analysis + JD │
-│  Output: skill_gap   │
-└─────────┬───────────┘
-          ▼
-┌─────────────────────┐
-│  ATS Optimizer       │ → Scores ATS, rewrites bullets, generates optimized resume
-│  Input: resume + JD + skill_gap │
-│  Output: ats_result  │
-└─────────┬───────────┘
-          ▼
-┌─────────────────────┐
-│  Interview Generator │ → Creates 15 role-specific questions
-│  Input: resume_analysis + JD │
-│  Output: interview_questions │
-└─────────────────────┘
-```
-
-Each agent **appends** to shared LangGraph state — no agent overwrites another's output.
-
----
-
-## 📊 Observability
-
-Set these environment variables to enable LangSmith tracing:
-
-```env
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=your_langsmith_key
-LANGCHAIN_PROJECT=smart-resume-builder
-```
-
-Every agent node is automatically traced with execution time, input/output, and token usage.
-
----
-
-## 🎨 Frontend Features
-
-- **Dark mode** premium UI with glassmorphism
-- **Drag & drop** resume upload (PDF/DOCX)
-- **5 tabbed dashboard**: Insights, Skill Gap, ATS Score, Optimized Resume, Interview Prep
-- **Animated circular ATS meter** (SVG)
-- **One-click copy** optimized resume
-- **Interactive mock interview** with real-time AI feedback
-- **Responsive** mobile-friendly layout
-
----
-
-## 📝 License
-
-MIT
+- **Frontend:** React, Vite, Custom Modern CSS
+- **Backend:** FastAPI, Python
+- **AI Orchestration:** LangGraph
+- **LLM Engine:** ChatGroq (`llama-3.3-70b-versatile`)
+- **Document Processing:** PDFPlumber, python-docx

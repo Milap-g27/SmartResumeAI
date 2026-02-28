@@ -10,6 +10,7 @@ export default defineConfig({
       '/mock-interview': 'http://localhost:8000',
       '/session': 'http://localhost:8000',
       '/download': 'http://localhost:8000',
+      '/api': 'http://localhost:8000',
     },
   },
 });

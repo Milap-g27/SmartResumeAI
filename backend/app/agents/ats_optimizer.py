@@ -168,22 +168,28 @@ Do NOT include any other fields. Do NOT output any numbers or scores.
 """
 
 RESUME_OPTIMIZER_PROMPT = """\
-You are a professional resume rewriter. You will be given:
+You are an elite, FAANG-level professional resume rewriter. You will be given:
 1. The original resume text.
 2. A job description.
 3. A skill gap analysis (missing skills, semantic matches).
 4. An ATS score with weak areas and improvement actions.
 
-Your job is to rewrite the resume so it is OPTIMIZED for the target job.
+Your job is to rewrite the resume so it is OPTIMIZED for the target job and strictly adheres to a high-density, 1-page format.
 
-Rules:
-- Keep all factual information accurate — do NOT invent experience or skills the candidate doesn't have.
-- Integrate keywords from the job description naturally.
-- Strengthen bullet points with action verbs and quantifiable results.
-- Ensure proper section structure (Summary, Experience, Skills, Education, Projects).
-- Address the weak areas and improvement actions provided.
-- Output the resume in clean Markdown format.
-- Do NOT include any commentary — output ONLY the rewritten resume.
+CRITICAL FORMATTING RULES - YOU MUST FOLLOW THESE EXACTLY:
+1. Name: Start with the candidate's name as a Heading 1 (`# First Last`).
+2. Contact Info: The very next line MUST be the contact info, pipe-separated. Do NOT use headers for this.
+   Example: `email@example.com | +1 234 567 8900 | linkedin.com/in/user | github.com/user`
+3. Sections: Use Heading 2 for ALL sections (`## SUMMARY`, `## PROFESSIONAL EXPERIENCE`, `## EDUCATION`, `## SKILLS`). Do NOT include a `## PROJECTS` section if the candidate has actual `PROFESSIONAL EXPERIENCE` listed. The `## SUMMARY` section MUST be restricted to a maximum of 2 extremely concise lines.
+4. Experience & Education Headers: You MUST format the header for EVERY job and education entry EXACTLY as a Heading 3 with 4 pipe-separated parts:
+   `### COMPANY OR SCHOOL | ROLE OR DEGREE | LOCATION | DATES`
+   Example: `### Exponentia.ai | Data Scientist | Bangalore, India | Jun 2024 - Present`
+   If location or dates are missing or irrelevant, leave the section between pipes blank or put a space: `### Personal Project | Developer | | 2023`
+5. Bullet Points: Use standard markdown bullets (`- `). Make them extremely concise, action-oriented, and metric-driven. YOU MUST NOT EXCEED 2 BULLETS PER EXPERIENCE ENTRY. This is a strict threshold to fit everything on one page.
+6. Skills Section: Combine ALL skills into maximum two lines. Example: `- **AI/ML/Tools:** Python, RAG, LangChain, FAISS, ... \n - **Cloud/DevOps:** AWS, Docker, Kubernetes...`
+7. Length: The output MUST fit on a single page. Be incredibly ruthless with editing. Combine related points, remove filler words, drop irrelevant older experience, and delete minor certifications if necessary to fit the 1-page limit.
+8. ABSOLUTE STRICT FACTUALITY: You MUST NOT hallucinate or falsify any information. DO NOT add fake skills, fake experiences, fake companies, or fake metrics/results. You must ONLY use the exact data provided in the original resume. If a skill from the Job Description is not in the original resume, DO NOT add it. You are an editor, not a fabricator. Present the existing truthful data in the best, most optimized way possible.
+9. Output ONLY the raw markdown text. Do NOT include any markdown code blocks (```markdown), do NOT write `---`, do NOT include commentary. Output the literal resume text.
 """
 
 

@@ -6,10 +6,11 @@ import os
 import uuid
 import traceback
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
 
 from app.services.file_parser import parse_resume
 from app.services.session_store import create_session, update_session
+from app.services.db_service import upsert_user, insert_resume, insert_analysis
 from app.graph import run_pipeline
 
 router = APIRouter()
@@ -20,6 +21,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/analyze")
 async def analyze_resume(
+    request: Request,
     resume: UploadFile = File(...),
     job_description: str = Form(...),
 ):
@@ -49,9 +51,29 @@ async def analyze_resume(
                 status_code=400,
                 detail="Could not extract any text from the uploaded file.",
             )
+            
+        # ── Save User & Resume to Supabase ──────────────────────────
+        user = getattr(request.state, "user", None)
+        user_db_id = None
+        if user and isinstance(user, dict):
+            firebase_uid = user.get("uid") or user.get("user_id")
+            email = user.get("email") or "unknown@email.com"
+            if firebase_uid:
+                user_db_id = upsert_user(firebase_uid, email)
+                
+        resume_id = insert_resume(user_db_id, resume_text)
 
         # ── Run LangGraph pipeline ──────────────────────────────────
         result = run_pipeline(resume_text, job_description)
+
+        # ── Save Analysis to Supabase ───────────────────────────────
+        if resume_id:
+            ats_result = result.get("ats_result", {})
+            skill_gap = result.get("skill_gap", {})
+            optimized_resume = ats_result.get("optimized_resume") if isinstance(ats_result, dict) else ""
+            ats_score = ats_result.get("total_score") if isinstance(ats_result, dict) else 0
+            
+            insert_analysis(resume_id, ats_score, skill_gap, optimized_resume)
 
         # ── Store session ───────────────────────────────────────────
         session_id = create_session(result)

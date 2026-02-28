@@ -1,32 +1,49 @@
-import React, { useState } from 'react';
+/**
+ * DashboardPage — Tabbed dashboard showing all analysis results.
+ * Reads data from sessionStorage (set by WorkspacePage after analysis).
+ * Tabs: Resume Insights | Skill Gap | ATS Score | Optimized Resume | Interview Prep
+ */
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import TabPanel from '../components/TabPanel';
 import AtsScoreMeter from '../components/AtsScoreMeter';
-import InterviewCard from '../components/InterviewCard';
-import MockInterview from '../components/MockInterview';
+import QuestionCard from '../components/interview/QuestionCard';
 import { downloadPDF, downloadDOCX, API_BASE } from '../api/client';
 import PdfViewer from '../components/resume/PdfViewer';
 
 const TABS = ['Resume Insights', 'Skill Gap', 'ATS Score', 'Optimized Resume', 'Interview Prep'];
 
-/**
- * ResultsPage — Premium tabbed dashboard showing all agent outputs.
- */
-export default function ResultsPage({ data, onBack }) {
+export default function DashboardPage() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState(0);
-    const [selectedQuestion, setSelectedQuestion] = useState(null);
+    const data = location.state;
+
+    useEffect(() => {
+        if (!data) {
+            navigate('/workspace', { replace: true });
+        } else {
+            // Clear the history state so a refresh will result in no data
+            window.history.replaceState({}, document.title);
+        }
+    }, [data, navigate]);
+
+    if (!data) return null;
+
     const { session_id, resume_analysis, skill_gap, ats_result, interview_questions } = data;
 
     return (
-        <div>
-            <div className="results-header">
-                <button className="back-btn" onClick={onBack} id="back-btn">
+        <div className="dashboard">
+            <div className="dashboard__header">
+                <button className="back-btn" onClick={() => navigate('/workspace')} id="back-btn">
                     <span className="material-icons-round" style={{ fontSize: '18px' }}>arrow_back</span>
                     New Analysis
                 </button>
+                <h1 className="dashboard__title">Analysis Dashboard</h1>
             </div>
 
             <TabPanel tabs={TABS} active={activeTab} onChange={setActiveTab}>
-                {/* ── Tab 0: Resume Insights ──────────────────────────── */}
+                {/* ── Tab 0: Resume Insights ──────────────────────── */}
                 {activeTab === 0 && resume_analysis && (
                     <div>
                         <div className="glass-card" style={{ marginBottom: '1.25rem' }}>
@@ -110,7 +127,7 @@ export default function ResultsPage({ data, onBack }) {
                     </div>
                 )}
 
-                {/* ── Tab 1: Skill Gap ─────────────────────────────────── */}
+                {/* ── Tab 1: Skill Gap ─────────────────────────────── */}
                 {activeTab === 1 && skill_gap && (
                     <div>
                         <div className="coverage-grid">
@@ -196,7 +213,7 @@ export default function ResultsPage({ data, onBack }) {
                     </div>
                 )}
 
-                {/* ── Tab 2: ATS Score ─────────────────────────────────── */}
+                {/* ── Tab 2: ATS Score ─────────────────────────────── */}
                 {activeTab === 2 && ats_result && (
                     <div>
                         <div className="glass-card">
@@ -229,7 +246,7 @@ export default function ResultsPage({ data, onBack }) {
                     </div>
                 )}
 
-                {/* ── Tab 3: Optimized Resume ──────────────────────────── */}
+                {/* ── Tab 3: Optimized Resume ──────────────────────── */}
                 {activeTab === 3 && ats_result && (
                     <div className="glass-card">
                         <div className="copy-bar">
@@ -244,29 +261,32 @@ export default function ResultsPage({ data, onBack }) {
                                 Download DOCX
                             </button>
                         </div>
-                        <div className="resume-preview" style={{ padding: 0, overflow: 'hidden', background: 'transparent' }}>
+                        <div className="resume-preview" style={{ padding: 0, background: 'transparent', display: 'flex', flexDirection: 'column' }}>
                             <PdfViewer fileUrl={`${API_BASE}/download/pdf/${session_id}`} />
                         </div>
                     </div>
                 )}
 
-                {/* ── Tab 4: Interview Prep ────────────────────────────── */}
+                {/* ── Tab 4: Interview Prep ────────────────────────── */}
                 {activeTab === 4 && interview_questions && (
                     <div>
+                        <div className="glass-card" style={{ marginBottom: '1.25rem', padding: '1rem 1.5rem' }}>
+                            <div className="section-title" style={{ marginBottom: 0 }}>
+                                <span className="material-icons-round" style={{ fontSize: '20px', color: 'var(--accent-indigo)' }}>quiz</span>
+                                {interview_questions.questions?.length || 0} Interview Questions Generated
+                            </div>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                Click a question to expand it, type your answer, and get AI-powered feedback.
+                            </p>
+                        </div>
                         {(interview_questions.questions || []).map((q, i) => (
-                            <InterviewCard
+                            <QuestionCard
                                 key={i}
                                 question={q}
-                                active={selectedQuestion === i}
-                                onClick={() => setSelectedQuestion(selectedQuestion === i ? null : i)}
+                                index={i}
+                                sessionId={session_id}
                             />
                         ))}
-                        {selectedQuestion !== null && interview_questions.questions?.[selectedQuestion] && (
-                            <MockInterview
-                                sessionId={session_id}
-                                question={interview_questions.questions[selectedQuestion]}
-                            />
-                        )}
                     </div>
                 )}
             </TabPanel>

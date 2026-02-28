@@ -78,6 +78,7 @@ class MockFeedback(BaseModel):
     communication: int = Field(default=0, ge=0, le=10)
     confidence: int = Field(default=0, ge=0, le=10)
     improvement: str = ""
+    sample_answer: list[str] = Field(default_factory=list, description="A 3-4 point concise FAANG-level ideal answer")
     strengths: list[str] = Field(default_factory=list)
 
 
@@ -91,7 +92,7 @@ class AnalyzeResponse(BaseModel):
 
 
 class MockInterviewRequest(BaseModel):
-    session_id: str
+    session_id: Optional[str] = None
     question: str
     answer: str
 

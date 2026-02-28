@@ -33,7 +33,7 @@ async def download_pdf(session_id: str):
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=optimized_resume_{session_id[:8]}.pdf"},
+        headers={"Content-Disposition": f"inline; filename=optimized_resume_{session_id[:8]}.pdf"},
     )
 
 

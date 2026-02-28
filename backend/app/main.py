@@ -27,26 +27,42 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
+
+# Firebase Auth middleware (optional — gracefully skips if firebase-admin not installed)
+try:
+    from app.middleware.firebase_auth import FirebaseAuthMiddleware
+    app.add_middleware(FirebaseAuthMiddleware)
+except ImportError:
+    pass
 
 # Include routers
 from app.routes.analyze import router as analyze_router
 from app.routes.interview import router as interview_router
 from app.routes.session import router as session_router
 from app.routes.download import router as download_router
+from app.routes.evaluate import router as evaluate_router
+from app.routes.optimize_ui import router as optimize_ui_router
 
 app.include_router(analyze_router, tags=["Analysis"])
 app.include_router(interview_router, tags=["Interview"])
 app.include_router(session_router, tags=["Session"])
 app.include_router(download_router, tags=["Download"])
+app.include_router(evaluate_router, tags=["Interview Evaluation"])
+app.include_router(optimize_ui_router, tags=["UI Optimization"])
 
 
 @app.get("/")
 async def root():
     return {
         "service": "Smart Resume Builder + Interview Coach",
-        "version": "1.0.0",
-        "endpoints": ["/analyze", "/mock-interview", "/session/{id}", "/download/pdf/{id}", "/download/docx/{id}"],
+        "version": "2.0.0",
+        "endpoints": [
+            "/analyze", "/mock-interview", "/session/{id}",
+            "/download/pdf/{id}", "/download/docx/{id}",
+            "/api/interview/evaluate", "/api/optimize-ui",
+        ],
     }
 
 

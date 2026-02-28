@@ -26,6 +26,7 @@ Evaluate the answer on these dimensions (each scored 0-10):
 
 Also provide:
 - A specific improvement suggestion
+- A perfect, FAANG-level "Sample Answer" broken down into 3-4 highly concise, plain-text bullet points. DO NOT use markdown formatting like `**bold**` or `*italics*`. Just return clean, concise sentences.
 - A list of strengths observed in the answer
 
 **You MUST return ONLY valid JSON** (no markdown, no code fences):
@@ -35,6 +36,7 @@ Also provide:
   "communication": 0-10,
   "confidence": 0-10,
   "improvement": "string (specific actionable suggestion)",
+  "sample_answer": ["First concise point...", "Second concise point..."],
   "strengths": ["string"]
 }
 """

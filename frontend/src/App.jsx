@@ -1,39 +1,18 @@
-import React, { useState } from 'react';
-import Navbar from './components/Navbar';
-import HomePage from './pages/HomePage';
-import ResultsPage from './pages/ResultsPage';
-import { analyzeResume } from './api/client';
-
 /**
- * App — Root component. Manages global state and page navigation.
+ * App — Root component with providers and routing.
+ * Wraps app in BrowserRouter, AuthProvider, ThemeProvider.
+ * Home page gets full-width layout; other pages use app-container.
  */
-export default function App() {
-    const [file, setFile] = useState(null);
-    const [jobDesc, setJobDesc] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [results, setResults] = useState(null);
+import React from 'react';
+import { BrowserRouter, useLocation } from 'react-router-dom';
+import { AuthProvider } from './config/AuthContext';
+import { ThemeProvider } from './config/ThemeContext';
+import Navbar from './components/Navbar';
+import AppRoutes from './routes/AppRoutes';
 
-    const handleAnalyze = async () => {
-        if (!file || !jobDesc.trim()) return;
-        setLoading(true);
-        setError('');
-        setResults(null);
-
-        try {
-            const data = await analyzeResume(file, jobDesc);
-            setResults(data);
-        } catch (err) {
-            setError(err.message || 'Something went wrong. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleBack = () => {
-        setResults(null);
-        setError('');
-    };
+function AppLayout() {
+    const location = useLocation();
+    const isFullWidth = location.pathname === '/home';
 
     return (
         <>
@@ -46,21 +25,21 @@ export default function App() {
 
             <Navbar />
 
-            <div className="app-container">
-                {results ? (
-                    <ResultsPage data={results} onBack={handleBack} />
-                ) : (
-                    <HomePage
-                        file={file}
-                        onFileChange={setFile}
-                        jobDesc={jobDesc}
-                        onJobDescChange={setJobDesc}
-                        onAnalyze={handleAnalyze}
-                        loading={loading}
-                        error={error}
-                    />
-                )}
+            <div className={isFullWidth ? '' : 'app-container'}>
+                <AppRoutes />
             </div>
         </>
+    );
+}
+
+export default function App() {
+    return (
+        <BrowserRouter>
+            <AuthProvider>
+                <ThemeProvider>
+                    <AppLayout />
+                </ThemeProvider>
+            </AuthProvider>
+        </BrowserRouter>
     );
 }

@@ -2,7 +2,7 @@
  * API client — communicates with the FastAPI backend.
  */
 
-const API_BASE = 'http://localhost:8000';
+export const API_BASE = 'http://localhost:8000';
 
 /**
  * Upload resume + job description and run the full analysis pipeline.
