@@ -1,11 +1,12 @@
 /**
- * ProtectedRoute — Redirects unauthenticated users to /auth.
+ * ProtectedRoute — Redirects unauthenticated users to /auth
+ * and unverified users to /account/email-verification unless explicitly allowed.
  */
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../config/AuthContext';
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, allowUnverified = false }) {
     const { user, loading } = useAuth();
 
     if (loading) {
@@ -17,5 +18,13 @@ export default function ProtectedRoute({ children }) {
         );
     }
 
-    return user ? children : <Navigate to="/auth" replace />;
+    if (!user) {
+        return <Navigate to="/auth" replace />;
+    }
+
+    if (!allowUnverified && !user.emailVerified) {
+        return <Navigate to="/account/email-verification" replace />;
+    }
+
+    return children;
 }

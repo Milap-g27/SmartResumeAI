@@ -91,6 +91,7 @@ async def analyze_resume(
             "skill_gap": result.get("skill_gap"),
             "ats_result": result.get("ats_result"),
             "interview_questions": result.get("interview_questions"),
+            "job_description": job_description,
         }
 
     except HTTPException:

@@ -203,10 +203,6 @@ export default function HomePage() {
                         <span className="home-footer__brand-text">Smart Resume Builder</span>
                     </div>
                     <span className="home-footer__copy">© 2025 Smart Resume AI Inc. All rights reserved.</span>
-                    <div className="home-footer__links">
-                        <a href="#"><span className="material-icons-round">mail</span></a>
-                        <a href="#"><span className="material-icons-round">language</span></a>
-                    </div>
                 </div>
             </footer>
         </div>

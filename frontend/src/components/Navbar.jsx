@@ -45,6 +45,20 @@ export default function Navbar() {
     const isActive = (path) => location.pathname === path;
     const isHome = location.pathname === '/home';
 
+    const scrollSectionToCenter = (sectionId) => {
+        const element = document.getElementById(sectionId);
+        if (!element) return;
+
+        const rect = element.getBoundingClientRect();
+        const absoluteTop = window.scrollY + rect.top;
+        const targetTop = absoluteTop - (window.innerHeight / 2) + (rect.height / 2);
+
+        window.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: 'smooth',
+        });
+    };
+
     return (
         <nav className={`navbar${scrolled ? ' navbar--scrolled' : ''}${isHome ? ' navbar--home' : ''}`} id="main-nav">
             <div className="navbar__inner">
@@ -89,19 +103,19 @@ export default function Navbar() {
                         <>
                             <button
                                 className="navbar__link"
-                                onClick={() => document.getElementById('home-features')?.scrollIntoView({ behavior: 'smooth' })}
-                            >
-                                Features
-                            </button>
-                            <button
-                                className="navbar__link"
-                                onClick={() => document.getElementById('home-pipeline')?.scrollIntoView({ behavior: 'smooth' })}
+                                onClick={() => scrollSectionToCenter('home-pipeline')}
                             >
                                 How It Works
                             </button>
                             <button
                                 className="navbar__link"
-                                onClick={() => document.getElementById('home-cta')?.scrollIntoView({ behavior: 'smooth' })}
+                                onClick={() => scrollSectionToCenter('home-features')}
+                            >
+                                Features
+                            </button>
+                            <button
+                                className="navbar__link"
+                                onClick={() => scrollSectionToCenter('home-cta')}
                             >
                                 About Us
                             </button>

@@ -186,7 +186,9 @@ CRITICAL FORMATTING RULES - YOU MUST FOLLOW THESE EXACTLY:
    Example: `### Exponentia.ai | Data Scientist | Bangalore, India | Jun 2024 - Present`
    If location or dates are missing or irrelevant, leave the section between pipes blank or put a space: `### Personal Project | Developer | | 2023`
 5. Bullet Points: Use standard markdown bullets (`- `). Keep every original bullet's meaning and factual content, but rewrite for stronger action verbs, clarity, and measurable impact language when metrics already exist.
-6. Skills Section: Preserve all original skills/tools/technologies listed in the resume. You may reorganize and group them for readability, but do NOT remove any listed skill/tool.
+6. Skills Section: Preserve all original skills/tools/technologies listed in the resume. You may reorganize and group them for readability, but do NOT remove any listed skill/tool. Format skills as category lines: `**Category Name:** Skill1, Skill2, Skill3`. Each category on its own line. Do NOT use bullet points for skills. Example:
+   **Programming Languages:** Python, Java, JavaScript
+   **Tools & Technologies:** Git, Docker, AWS
 7. Content Preservation (MANDATORY): Do NOT delete sections, jobs, projects, education entries, certifications, or meaningful bullets from the original resume. You may refine wording, reorder for readability, and fix structure, but you must retain all substantive information.
 8. Length: Do NOT force one-page compression. Optimize for clarity and ATS readability, not aggressive cutting.
 9. ABSOLUTE STRICT FACTUALITY: You MUST NOT hallucinate or falsify any information. DO NOT add fake skills, fake experiences, fake companies, or fake metrics/results. You must ONLY use the exact data provided in the original resume. If a skill from the Job Description is not in the original resume, DO NOT add it. You are an editor, not a fabricator.

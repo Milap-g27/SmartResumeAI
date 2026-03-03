@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import TabPanel from '../components/TabPanel';
 import AtsScoreMeter from '../components/AtsScoreMeter';
 import InterviewCard from '../components/InterviewCard';
 import MockInterview from '../components/MockInterview';
-import { downloadPDF, downloadDOCX, API_BASE } from '../api/client';
+import { downloadPDF, downloadDOCX, getResumePDFBlob } from '../api/client';
 import PdfViewer from '../components/resume/PdfViewer';
 
 const TABS = ['Resume Insights', 'Skill Gap', 'ATS Score', 'Optimized Resume', 'Interview Prep'];
@@ -14,7 +14,53 @@ const TABS = ['Resume Insights', 'Skill Gap', 'ATS Score', 'Optimized Resume', '
 export default function ResultsPage({ data, onBack }) {
     const [activeTab, setActiveTab] = useState(0);
     const [selectedQuestion, setSelectedQuestion] = useState(null);
+    const [previewPdfUrl, setPreviewPdfUrl] = useState('');
+    const [downloadError, setDownloadError] = useState('');
     const { session_id, resume_analysis, skill_gap, ats_result, interview_questions } = data;
+    const optimizedResume = ats_result?.optimized_resume || '';
+
+    useEffect(() => {
+        let objectUrl = '';
+
+        const loadPreview = async () => {
+            if (!optimizedResume?.trim() && !session_id) {
+                setPreviewPdfUrl('');
+                return;
+            }
+
+            try {
+                const blob = await getResumePDFBlob({ sessionId: session_id, optimizedResume });
+                objectUrl = URL.createObjectURL(blob);
+                setPreviewPdfUrl(objectUrl);
+            } catch {
+                setPreviewPdfUrl('');
+            }
+        };
+
+        loadPreview();
+
+        return () => {
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [session_id, optimizedResume]);
+
+    const handleDownloadPDF = async () => {
+        setDownloadError('');
+        try {
+            await downloadPDF(session_id, optimizedResume);
+        } catch (err) {
+            setDownloadError(err.message || 'Failed to download PDF.');
+        }
+    };
+
+    const handleDownloadDOCX = async () => {
+        setDownloadError('');
+        try {
+            await downloadDOCX(session_id, optimizedResume);
+        } catch (err) {
+            setDownloadError(err.message || 'Failed to download DOCX.');
+        }
+    };
 
     return (
         <div>
@@ -233,19 +279,22 @@ export default function ResultsPage({ data, onBack }) {
                 {activeTab === 3 && ats_result && (
                     <div className="glass-card">
                         <div className="copy-bar">
-                            <button className="btn-secondary" onClick={() => downloadPDF(session_id)} id="download-pdf-btn"
+                            <button className="btn-secondary" onClick={handleDownloadPDF} id="download-pdf-btn"
                                 style={{ background: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }}>
                                 <span className="material-icons-round" style={{ fontSize: '16px' }}>picture_as_pdf</span>
                                 Download PDF
                             </button>
-                            <button className="btn-secondary" onClick={() => downloadDOCX(session_id)} id="download-docx-btn"
+                            <button className="btn-secondary" onClick={handleDownloadDOCX} id="download-docx-btn"
                                 style={{ background: 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.2)' }}>
                                 <span className="material-icons-round" style={{ fontSize: '16px' }}>description</span>
                                 Download DOCX
                             </button>
                         </div>
+                        {downloadError && (
+                            <p className="cover-letter-page__error" style={{ marginBottom: '0.75rem' }}>{downloadError}</p>
+                        )}
                         <div className="resume-preview" style={{ padding: 0, overflow: 'hidden', background: 'transparent' }}>
-                            <PdfViewer fileUrl={`${API_BASE}/download/pdf/${session_id}`} />
+                            <PdfViewer fileUrl={previewPdfUrl} />
                         </div>
                     </div>
                 )}

@@ -61,7 +61,7 @@ export default function AppRoutes() {
                 <Route
                     path="/account"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowUnverified>
                             <AccountPage />
                         </ProtectedRoute>
                     }
@@ -69,7 +69,7 @@ export default function AppRoutes() {
                 <Route
                     path="/account/email-verification"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowUnverified>
                             <AccountEmailVerificationPage />
                         </ProtectedRoute>
                     }
@@ -77,7 +77,7 @@ export default function AppRoutes() {
                 <Route
                     path="/account/password-reset"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowUnverified>
                             <AccountPasswordResetPage />
                         </ProtectedRoute>
                     }
@@ -85,7 +85,7 @@ export default function AppRoutes() {
                 <Route
                     path="/account/change-email"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowUnverified>
                             <AccountChangeEmailPage />
                         </ProtectedRoute>
                     }
@@ -93,7 +93,7 @@ export default function AppRoutes() {
                 <Route
                     path="/account/theme-preference"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowUnverified>
                             <AccountThemePreferencePage />
                         </ProtectedRoute>
                     }

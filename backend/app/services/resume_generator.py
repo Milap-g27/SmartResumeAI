@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import io
+import os
+import platform
 import re
 from pathlib import Path
 
@@ -19,6 +21,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 from reportlab.lib.colors import HexColor
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -26,11 +30,86 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
 # ═══════════════════════════════════════════════════════════════════
+# Unicode Font Registration (supports full UTF-8 in PDFs)
+# ═══════════════════════════════════════════════════════════════════
+
+_FONT = "Helvetica"
+_FONT_BD = "Helvetica-Bold"
+_FONT_IT = "Helvetica-Oblique"
+_FONT_BI = "Helvetica-BoldOblique"
+
+def _register_unicode_fonts():
+    """Try to register a Unicode TTF font family; fall back to Helvetica."""
+    global _FONT, _FONT_BD, _FONT_IT, _FONT_BI
+
+    candidates: list[tuple[str, str, str, str]] = []
+
+    if platform.system() == "Windows":
+        windir = os.environ.get("WINDIR", r"C:\Windows")
+        fd = os.path.join(windir, "Fonts")
+        candidates.append((
+            os.path.join(fd, "arial.ttf"),
+            os.path.join(fd, "arialbd.ttf"),
+            os.path.join(fd, "ariali.ttf"),
+            os.path.join(fd, "arialbi.ttf"),
+        ))
+    else:
+        # Linux (Render / Ubuntu / Debian)
+        candidates += [
+            (
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf",
+            ),
+            (
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf",
+            ),
+        ]
+
+    for regular, bold, italic, bold_italic in candidates:
+        if not os.path.isfile(regular):
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont("UniFont", regular))
+            _FONT = "UniFont"
+            _FONT_BD = "UniFont"
+            _FONT_IT = "UniFont"
+            _FONT_BI = "UniFont"
+
+            if os.path.isfile(bold):
+                pdfmetrics.registerFont(TTFont("UniFont-Bold", bold))
+                _FONT_BD = "UniFont-Bold"
+            if os.path.isfile(italic):
+                pdfmetrics.registerFont(TTFont("UniFont-Italic", italic))
+                _FONT_IT = "UniFont-Italic"
+            if os.path.isfile(bold_italic):
+                pdfmetrics.registerFont(TTFont("UniFont-BI", bold_italic))
+                _FONT_BI = "UniFont-BI"
+
+            pdfmetrics.registerFontFamily(
+                "UniFont",
+                normal=_FONT,
+                bold=_FONT_BD,
+                italic=_FONT_IT,
+                boldItalic=_FONT_BI,
+            )
+            return
+        except Exception:
+            continue
+
+_register_unicode_fonts()
+
+
+# ═══════════════════════════════════════════════════════════════════
 # PDF Generation (reportlab)
 # ═══════════════════════════════════════════════════════════════════
 
 def _build_pdf_styles():
-    """Create ATS-safe PDF styles."""
+    """Create ATS-safe PDF styles using Unicode-capable fonts."""
     styles = getSampleStyleSheet()
 
     styles.add(ParagraphStyle(
@@ -41,7 +120,7 @@ def _build_pdf_styles():
         alignment=TA_CENTER,
         spaceAfter=4,
         textColor=HexColor("#1a1a1a"),
-        fontName="Helvetica-Bold",
+        fontName=_FONT_BD,
         wordWrap='CJK',
     ))
 
@@ -53,6 +132,7 @@ def _build_pdf_styles():
         alignment=TA_CENTER,
         spaceAfter=8,
         textColor=HexColor("#555555"),
+        fontName=_FONT,
         wordWrap='CJK',
     ))
 
@@ -64,7 +144,7 @@ def _build_pdf_styles():
         spaceBefore=6,
         spaceAfter=2,
         textColor=HexColor("#1a1a1a"),
-        fontName="Helvetica-Bold",
+        fontName=_FONT_BD,
         borderWidth=0,
         wordWrap='CJK',
     ))
@@ -74,7 +154,7 @@ def _build_pdf_styles():
         parent=styles["Normal"],
         fontSize=10,
         leading=12,
-        fontName="Helvetica-Bold",
+        fontName=_FONT_BD,
         textColor=HexColor("#1a1a1a"),
         wordWrap='CJK',
     ))
@@ -85,6 +165,7 @@ def _build_pdf_styles():
         fontSize=10,
         leading=12,
         alignment=TA_RIGHT,
+        fontName=_FONT_BD,
         textColor=HexColor("#1a1a1a"),
         wordWrap='CJK',
     ))
@@ -94,7 +175,7 @@ def _build_pdf_styles():
         parent=styles["Normal"],
         fontSize=10,
         leading=12,
-        fontName="Helvetica-Oblique",
+        fontName=_FONT_IT,
         textColor=HexColor("#333333"),
         wordWrap='CJK',
     ))
@@ -104,7 +185,7 @@ def _build_pdf_styles():
         parent=styles["Normal"],
         fontSize=10,
         leading=12,
-        fontName="Helvetica-Oblique",
+        fontName=_FONT_IT,
         alignment=TA_RIGHT,
         textColor=HexColor("#333333"),
         wordWrap='CJK',
@@ -117,6 +198,7 @@ def _build_pdf_styles():
         leading=12,
         spaceBefore=6,
         spaceAfter=2,
+        fontName=_FONT_BD,
         textColor=HexColor("#333333"),
         wordWrap='CJK',
     ))
@@ -127,6 +209,7 @@ def _build_pdf_styles():
         fontSize=9.5,
         leading=11.5,
         spaceAfter=1,
+        fontName=_FONT,
         textColor=HexColor("#333333"),
         wordWrap='CJK',
     ))
@@ -139,6 +222,7 @@ def _build_pdf_styles():
         leftIndent=12,
         spaceAfter=1,
         bulletIndent=6,
+        fontName=_FONT,
         textColor=HexColor("#333333"),
         wordWrap='CJK',
     ))
@@ -147,7 +231,13 @@ def _build_pdf_styles():
 
 
 def _sanitize_for_pdf(text: str) -> str:
-    """Sanitize text to replace problematic Unicode characters for standard ReportLab fonts."""
+    """Normalise special Unicode chars for consistent PDF rendering.
+
+    With a registered TTF font all UTF-8 glyphs are supported, so we
+    only replace invisible / ambiguous characters that could cause
+    layout issues.  We intentionally keep accented, Cyrillic, CJK,
+    Devanagari, Gujarati and other real characters intact.
+    """
     replacements = {
         '\u2010': '-',    # hyphen
         '\u2011': '-',    # non-breaking hyphen
@@ -176,9 +266,11 @@ def _sanitize_for_pdf(text: str) -> str:
     }
     for char, repl in replacements.items():
         text = text.replace(char, repl)
-        
-    # Strip any remaining characters not in Latin-1
-    return text.encode('latin-1', 'ignore').decode('latin-1')
+
+    # Escape XML-special characters for ReportLab Paragraph
+    text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+    return text
 
 
 def generate_pdf(markdown_text: str) -> bytes:
@@ -203,30 +295,31 @@ def generate_pdf(markdown_text: str) -> bytes:
 
         # H1 — Name
         if line.startswith("# ") and not line.startswith("## "):
-            text = line[2:].strip()
+            text = _sanitize_for_pdf(line[2:].strip())
             story.append(Paragraph(text, styles["ResumeName"]))
 
         # H2 — Section heading
         elif line.startswith("## "):
             in_header = False
-            text = line[3:].strip()
+            raw = line[3:].strip().upper()
+            text = _sanitize_for_pdf(raw)
             story.append(HRFlowable(
                 width="100%", thickness=0.5,
                 color=HexColor("#cccccc"), spaceAfter=2, spaceBefore=6,
             ))
-            story.append(Paragraph(f"<b>{text.upper()}</b>", styles["SectionHeading"]))
+            story.append(Paragraph(f"<b>{text}</b>", styles["SectionHeading"]))
 
         # H3 — Sub heading (company/role)
         elif line.startswith("### "):
             text = line[4:].strip()
             if "|" in text:
-                parts = [p.strip() for p in text.split("|")]
-                company = parts[0] if len(parts) > 0 else ""
-                role = parts[1] if len(parts) > 1 else ""
-                location = parts[2] if len(parts) > 2 else ""
-                dates = parts[3] if len(parts) > 3 else ""
+                raw_parts = [p.strip() for p in text.split("|")]
+                company = _sanitize_for_pdf(raw_parts[0].upper()) if len(raw_parts) > 0 else ""
+                role = _sanitize_for_pdf(raw_parts[1]) if len(raw_parts) > 1 else ""
+                location = _sanitize_for_pdf(raw_parts[2]) if len(raw_parts) > 2 else ""
+                dates = _sanitize_for_pdf(raw_parts[3]) if len(raw_parts) > 3 else ""
                 
-                comp_para = Paragraph(f"<b>{company.upper()}</b>", styles["JobHeaderCompany"]) if company else Paragraph("", styles["JobHeaderCompany"])
+                comp_para = Paragraph(f"<b>{company}</b>", styles["JobHeaderCompany"]) if company else Paragraph("", styles["JobHeaderCompany"])
                 loc_para = Paragraph(f"<b>{location}</b>", styles["JobHeaderLocation"]) if location else Paragraph("", styles["JobHeaderLocation"])
                 role_para = Paragraph(f"<i>{role}</i>", styles["JobHeaderRole"]) if role else Paragraph("", styles["JobHeaderRole"])
                 date_para = Paragraph(f"<i>{dates}</i>", styles["JobHeaderDates"]) if dates else Paragraph("", styles["JobHeaderDates"])
@@ -245,6 +338,7 @@ def generate_pdf(markdown_text: str) -> bytes:
                 story.append(t)
                 story.append(Spacer(1, 4))
             else:
+                text = _sanitize_for_pdf(text)
                 story.append(Paragraph(f"<b>{text}</b>", styles["SubHeading"]))
 
         elif line.strip().startswith("- "):

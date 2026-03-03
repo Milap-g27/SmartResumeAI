@@ -4,7 +4,7 @@
  * Right: Job Description input area
  * Bottom: Analyze button + loading state
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PdfViewer from '../components/resume/PdfViewer';
 import { analyzeResume } from '../api/client';
@@ -21,6 +21,19 @@ export default function WorkspacePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [dragOver, setDragOver] = useState(false);
+    const analyzeRef = useRef(null);
+    const prevReadyRef = useRef(false);
+
+    /* Auto-scroll to the Analyze button the moment both inputs become ready */
+    useEffect(() => {
+        const isReady = Boolean(file && jobDesc.trim());
+        if (isReady && !prevReadyRef.current) {
+            setTimeout(() => {
+                analyzeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+        prevReadyRef.current = isReady;
+    }, [file, jobDesc]);
 
     const handleFileChange = useCallback((e) => {
         const selectedFile = e.target.files?.[0];
@@ -47,7 +60,7 @@ export default function WorkspacePage() {
             sessionStorage.setItem('latestDashboardData', JSON.stringify(data));
             navigate('/dashboard', { state: data });
         } catch (err) {
-            setError(err.message || 'Analysis failed. Please try again.');
+            setError(err.message || 'Something went wrong during analysis. Please check your inputs and try again.');
         } finally {
             setLoading(false);
         }
@@ -149,7 +162,7 @@ export default function WorkspacePage() {
             </div>
 
             {/* Analyze Button */}
-            <div className="workspace__actions">
+            <div className="workspace__actions" ref={analyzeRef}>
                 <button
                     className="btn-primary"
                     onClick={handleAnalyze}

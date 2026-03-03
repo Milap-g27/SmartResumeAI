@@ -10,6 +10,77 @@ import { useTheme } from '../config/ThemeContext';
 
 const MODES = { LOGIN: 'login', SIGNUP: 'signup', RESET: 'reset' };
 
+const PASSWORD_POLICY = {
+    minLength: 6,
+    requireUppercase: true,
+    requireLowercase: true,
+    requireNumber: true,
+    requireSpecial: true,
+};
+
+function getPasswordPolicyIssues(password) {
+    const issues = [];
+
+    if (password.length < PASSWORD_POLICY.minLength) {
+        issues.push(`at least ${PASSWORD_POLICY.minLength} characters`);
+    }
+    if (PASSWORD_POLICY.requireUppercase && !/[A-Z]/.test(password)) {
+        issues.push('one uppercase letter');
+    }
+    if (PASSWORD_POLICY.requireLowercase && !/[a-z]/.test(password)) {
+        issues.push('one lowercase letter');
+    }
+    if (PASSWORD_POLICY.requireNumber && !/[0-9]/.test(password)) {
+        issues.push('one number');
+    }
+    if (PASSWORD_POLICY.requireSpecial && !/[^A-Za-z0-9]/.test(password)) {
+        issues.push('one special character');
+    }
+
+    return issues;
+}
+
+function getAuthErrorMessage(err, mode) {
+    const code = err?.code || '';
+
+    const common = {
+        'auth/network-request-failed': 'Unable to connect. Please check your internet connection and try again.',
+        'auth/too-many-requests': 'Too many attempts — please wait a minute before trying again.',
+        'auth/invalid-api-key': 'Authentication service is temporarily unavailable. Please contact support.',
+        'auth/unauthorized-domain': 'This domain is not authorized. Please contact support.',
+        'auth/popup-closed-by-user': 'Google sign-in was cancelled. You can try again anytime.',
+        'auth/popup-blocked': 'Pop-up was blocked by your browser. Please allow pop-ups and try again.',
+    };
+
+    const login = {
+        'auth/invalid-credential': 'Incorrect email or password. Please double-check and try again.',
+        'auth/user-not-found': 'No account found with this email. Would you like to create one?',
+        'auth/wrong-password': 'Incorrect password. Try again or use "Forgot password?" to reset it.',
+        'auth/invalid-email': 'That doesn\'t look like a valid email address. Please check and try again.',
+        'auth/user-disabled': 'This account has been suspended. Please contact support for help.',
+    };
+
+    const signup = {
+        'auth/email-already-in-use': 'An account with this email already exists. Try signing in instead.',
+        'auth/invalid-email': 'That doesn\'t look like a valid email address. Please check and try again.',
+        'auth/weak-password': 'Password is too weak. Please use at least 6 characters with a mix of letters, numbers, and symbols.',
+        'auth/password-does-not-meet-requirements': 'Password doesn\'t meet the security requirements. Please use a stronger password with uppercase, lowercase, numbers, and special characters.',
+    };
+
+    const reset = {
+        'auth/invalid-email': 'That doesn\'t look like a valid email address. Please check and try again.',
+        'auth/user-not-found': 'No account found with this email. Please check the address or create a new account.',
+        'auth/missing-email': 'Please enter your email address to receive a reset link.',
+    };
+
+    if (common[code]) return common[code];
+    if (mode === MODES.LOGIN && login[code]) return login[code];
+    if (mode === MODES.SIGNUP && signup[code]) return signup[code];
+    if (mode === MODES.RESET && reset[code]) return reset[code];
+
+    return 'Something went wrong. Please try again or contact support if the issue persists.';
+}
+
 export default function AuthPage() {
     const { user, login, signup, resetPassword, googleLogin } = useAuth();
     const { theme, toggleTheme } = useTheme();
@@ -36,15 +107,24 @@ export default function AuthPage() {
         try {
             if (mode === MODES.RESET) {
                 await resetPassword(email);
-                setMessage('Password reset email sent! Check your inbox.');
+                setMessage('Password reset link sent successfully! Please check your inbox and spam/junk folder, then follow the link to set a new password.');
                 setLoading(false);
                 return;
             }
 
             if (mode === MODES.SIGNUP && password !== confirmPassword) {
-                setError('Passwords do not match.');
+                setError('Passwords don\'t match. Please re-enter your password in both fields.');
                 setLoading(false);
                 return;
+            }
+
+            if (mode === MODES.SIGNUP) {
+                const issues = getPasswordPolicyIssues(password);
+                if (issues.length > 0) {
+                    setError(`Password must include ${issues.join(', ')}.`);
+                    setLoading(false);
+                    return;
+                }
             }
 
             if (mode === MODES.LOGIN) {
@@ -55,9 +135,7 @@ export default function AuthPage() {
                 navigate('/account');
             }
         } catch (err) {
-            const msg = err?.message || 'Authentication failed.';
-            // Clean up Firebase error messages
-            setError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '').trim());
+            setError(getAuthErrorMessage(err, mode));
         } finally {
             setLoading(false);
         }
@@ -69,7 +147,7 @@ export default function AuthPage() {
             await googleLogin();
             navigate('/home');
         } catch (err) {
-            setError(err?.message || 'Google sign-in failed.');
+            setError(getAuthErrorMessage(err, mode));
         }
     };
 

@@ -3,7 +3,7 @@
  * Wraps app in BrowserRouter, AuthProvider, ThemeProvider.
  * Home page gets full-width layout; other pages use app-container.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AuthProvider } from './config/AuthContext';
 import { ThemeProvider } from './config/ThemeContext';
@@ -16,6 +16,20 @@ function AppLayout() {
     const location = useLocation();
     const { themeReady } = useTheme();
     const isFullWidth = location.pathname === '/home';
+
+    useEffect(() => {
+        const navEntry = performance.getEntriesByType('navigation')?.[0];
+        if (navEntry?.type !== 'reload') return;
+
+        sessionStorage.removeItem('latestDashboardData');
+        sessionStorage.removeItem('latestCoverLetterDraft');
+
+        Object.keys(sessionStorage).forEach((key) => {
+            if (key.startsWith('coverLetterDraft:')) {
+                sessionStorage.removeItem(key);
+            }
+        });
+    }, []);
 
     if (!themeReady) {
         return (

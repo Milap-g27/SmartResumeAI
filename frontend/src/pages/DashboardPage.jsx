@@ -8,22 +8,38 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import TabPanel from '../components/TabPanel';
 import AtsScoreMeter from '../components/AtsScoreMeter';
 import QuestionCard from '../components/interview/QuestionCard';
-import { downloadPDF, downloadDOCX, API_BASE } from '../api/client';
+import { downloadPDF, downloadDOCX, getResumePDFBlob } from '../api/client';
 import PdfViewer from '../components/resume/PdfViewer';
 
 const TABS = ['Resume Insights', 'Skill Gap', 'ATS Score', 'Optimized Resume', 'Interview Prep'];
+
+function hasDashboardPayload(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+
+    return Boolean(
+        payload.session_id
+        || payload.resume_analysis
+        || payload.skill_gap
+        || payload.ats_result
+        || payload.interview_questions
+    );
+}
 
 export default function DashboardPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const [activeTab, setActiveTab] = useState(0);
     const [data, setData] = useState(location.state || null);
+    const [previewPdfUrl, setPreviewPdfUrl] = useState('');
+    const [downloadError, setDownloadError] = useState('');
+    const [dataMissing, setDataMissing] = useState(false);
 
+    /* ── Resolve dashboard data from location.state or sessionStorage ── */
     useEffect(() => {
-        if (location.state) {
+        if (hasDashboardPayload(location.state)) {
             setData(location.state);
+            setDataMissing(false);
             sessionStorage.setItem('latestDashboardData', JSON.stringify(location.state));
-            window.history.replaceState({}, document.title);
             return;
         }
 
@@ -31,18 +47,85 @@ export default function DashboardPage() {
         if (cached) {
             try {
                 setData(JSON.parse(cached));
+                setDataMissing(false);
                 return;
             } catch {
                 sessionStorage.removeItem('latestDashboardData');
             }
         }
 
-        navigate('/workspace', { replace: true });
-    }, [location.state, navigate]);
+        setDataMissing(true);
+    }, [location.state]);
 
-    if (!data) return null;
+    /* ── Derive fields safely (may be null until data loads) ── */
+    const session_id = data?.session_id;
+    const resume_analysis = data?.resume_analysis;
+    const skill_gap = data?.skill_gap;
+    const ats_result = data?.ats_result;
+    const interview_questions = data?.interview_questions;
+    const optimizedResume = ats_result?.optimized_resume || '';
 
-    const { session_id, resume_analysis, skill_gap, ats_result, interview_questions } = data;
+    /* ── PDF preview blob (MUST stay above any early return) ── */
+    useEffect(() => {
+        let objectUrl = '';
+
+        if (!data) return;                       // guard — no data yet
+
+        const loadPreview = async () => {
+            if (!optimizedResume?.trim() && !session_id) {
+                setPreviewPdfUrl('');
+                return;
+            }
+
+            try {
+                const blob = await getResumePDFBlob({ sessionId: session_id, optimizedResume });
+                objectUrl = URL.createObjectURL(blob);
+                setPreviewPdfUrl(objectUrl);
+            } catch {
+                setPreviewPdfUrl('');
+            }
+        };
+
+        loadPreview();
+
+        return () => {
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [data, session_id, optimizedResume]);
+
+    /* ── Download handlers ── */
+    const handleDownloadPDF = async () => {
+        setDownloadError('');
+        try {
+            await downloadPDF(session_id, optimizedResume);
+        } catch (err) {
+            setDownloadError(err.message || 'Unable to download your PDF right now. Please try again.');
+        }
+    };
+
+    const handleDownloadDOCX = async () => {
+        setDownloadError('');
+        try {
+            await downloadDOCX(session_id, optimizedResume);
+        } catch (err) {
+            setDownloadError(err.message || 'Unable to download your DOCX right now. Please try again.');
+        }
+    };
+
+    /* ── Empty-state placeholder for tabs without data ── */
+    const EmptyTab = ({ icon, label }) => (
+        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+            <span className="material-icons-round" style={{ fontSize: '3rem', color: 'var(--accent-indigo)', opacity: 0.5 }}>{icon}</span>
+            <p style={{ marginTop: '1rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{label}</p>
+            <p style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Upload your resume and a job description in Workspace to see results here.
+            </p>
+            <button className="btn-primary" onClick={() => navigate('/workspace')} style={{ marginTop: '1.25rem' }}>
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>workspaces</span>
+                Go to Workspace
+            </button>
+        </div>
+    );
 
     return (
         <div className="dashboard">
@@ -138,6 +221,7 @@ export default function DashboardPage() {
                         )}
                     </div>
                 )}
+                {activeTab === 0 && !resume_analysis && <EmptyTab icon="person_search" label="No Resume Insights Yet" />}
 
                 {/* ── Tab 1: Skill Gap ─────────────────────────────── */}
                 {activeTab === 1 && skill_gap && (
@@ -224,6 +308,7 @@ export default function DashboardPage() {
                         )}
                     </div>
                 )}
+                {activeTab === 1 && !skill_gap && <EmptyTab icon="compare_arrows" label="No Skill Gap Analysis Yet" />}
 
                 {/* ── Tab 2: ATS Score ─────────────────────────────── */}
                 {activeTab === 2 && ats_result && (
@@ -257,27 +342,32 @@ export default function DashboardPage() {
                         )}
                     </div>
                 )}
+                {activeTab === 2 && !ats_result && <EmptyTab icon="speed" label="No ATS Score Yet" />}
 
                 {/* ── Tab 3: Optimized Resume ──────────────────────── */}
                 {activeTab === 3 && ats_result && (
                     <div className="glass-card">
                         <div className="copy-bar">
-                            <button className="btn-secondary" onClick={() => downloadPDF(session_id)} id="download-pdf-btn"
+                            <button className="btn-secondary" onClick={handleDownloadPDF} id="download-pdf-btn"
                                 style={{ background: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }}>
                                 <span className="material-icons-round" style={{ fontSize: '16px' }}>picture_as_pdf</span>
                                 Download PDF
                             </button>
-                            <button className="btn-secondary" onClick={() => downloadDOCX(session_id)} id="download-docx-btn"
+                            <button className="btn-secondary" onClick={handleDownloadDOCX} id="download-docx-btn"
                                 style={{ background: 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.2)' }}>
                                 <span className="material-icons-round" style={{ fontSize: '16px' }}>description</span>
                                 Download DOCX
                             </button>
                         </div>
+                        {downloadError && (
+                            <p className="cover-letter-page__error" style={{ marginBottom: '0.75rem' }}>{downloadError}</p>
+                        )}
                         <div className="resume-preview" style={{ padding: 0, background: 'transparent', display: 'flex', flexDirection: 'column' }}>
-                            <PdfViewer fileUrl={`${API_BASE}/download/pdf/${session_id}`} />
+                            <PdfViewer fileUrl={previewPdfUrl} />
                         </div>
                     </div>
                 )}
+                {activeTab === 3 && !ats_result && <EmptyTab icon="description" label="No Optimized Resume Yet" />}
 
                 {/* ── Tab 4: Interview Prep ────────────────────────── */}
                 {activeTab === 4 && interview_questions && (
@@ -301,6 +391,7 @@ export default function DashboardPage() {
                         ))}
                     </div>
                 )}
+                {activeTab === 4 && !interview_questions && <EmptyTab icon="quiz" label="No Interview Questions Yet" />}
 
             </TabPanel>
         </div>
