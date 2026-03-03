@@ -1,31 +1,17 @@
-# 🚀 Smart Resume Builder + Interview Coach
+# Smart Resume Builder + Interview Coach
 
-> **Collaborative Multi-Agent System (CMAS)** — AI-powered resume analysis, ATS scoring, skill-gap detection, and comprehensive interview coaching.
-
-Smart Resume Builder + Interview Coach is an intelligent, comprehensive career advancement platform designed to help job seekers optimize their applications and prepare for interviews with confidence. Powered by a sophisticated multi-agent AI system, the application acts as a personal career coach, guiding users from the initial resume review to final interview preparation.
+> AI-powered career platform — resume analysis, ATS optimization, skill-gap detection, cover letter generation, and interview coaching, all driven by a collaborative multi-agent system.
 
 ---
 
-## 🎯 What This App Does
+## Features
 
-In today's competitive job market, getting past the Applicant Tracking System (ATS) and excelling in interviews can be daunting. This application bridges the gap between your experience and your dream job by offering:
+### Resume Analysis
+Upload a PDF or DOCX resume alongside a target job description. The AI parses the document structure, extracts skills, evaluates bullet-point quality, and identifies weak or vague content. Non-skill items (AI tools, code editors, etc.) are automatically filtered out of the detected skills list.
 
-- **Intelligent ATS Optimization:** Automatically analyzes your resume against target job descriptions, scores it for ATS compatibility, and intelligently rewrites bullet points to highlight impact and metrics.
-- **Skill Gap Analysis:** Pinpoints exactly which required skills are missing from your resume and suggests actionable learning paths.
-- **Personalized Interview Prep:** Generates role-specific interview questions based on your unique experience and the target job description.
-- **Interactive Mock Interviews:** Simulates real interview scenarios with an AI agent that evaluates your typed answers for clarity, depth, and communication skills, providing real-time feedback.
+### ATS Score & Resume Optimization
+A weighted ATS compatibility score is calculated across four dimensions:
 
----
-
-## 🌟 Key Features
-
-### 1. 📄 Deep Resume Analysis
-The platform doesn't just read your resume; it understands it. It breaks down your document (PDF or DOCX) into core sections, evaluates the quality of your content, and identifies weak or vague bullet points that need improvement.
-
-### 2. ⚡ AI-Driven Resume Re-writing
-Struggling to find the right action verbs? The **ATS Optimizer** revamps your experience bullet points, ensuring they are metrics-driven, impactful, and perfectly aligned with the job description.
-
-**ATS Score Formula Integration:**
 | Component | Weight |
 |-----------|--------|
 | Keyword Match | 40% |
@@ -33,96 +19,62 @@ Struggling to find the right action verbs? The **ATS Optimizer** revamps your ex
 | Experience Relevance | 20% |
 | Formatting & Structure | 15% |
 
-### 3. 🎯 Skill Match & Gap Detection
-By comparing your parsed resume against a provided job description, the application identifies explicit and implicit skills you possess, while highlighting critical gaps you need to address to become the ideal candidate.
+The optimizer rewrites bullet points for impact and keyword alignment while **preserving all original content** — no sections, skills, or projects are removed.
 
-### 4. 🎤 Smart Interview Generation
-Generic interview questions aren't enough. The **Interview Generator** crafts 15 highly targeted questions covering technical, project-specific, and behavioral domains, all tailored to the intersection of your resume and the target role.
+### Skill Gap Detection
+Compares parsed resume skills against job description requirements. Surfaces matched skills, missing skills, and actionable learning recommendations to close the gaps.
 
-### 5. 💬 Real-time Mock Interviews
-Engage in a dialog with our **Mock Interview Coach**. Submit your answers and receive immediate, constructive feedback on your confidence, communication style, and technical depth.
+### Cover Letter Generation
+Generates a concise, professional cover letter (140–190 words, two paragraphs) scoped to the specific resume and job description. Drafts are persisted per analysis session and saved to the database.
 
----
+### Interview Question Generation
+Produces 15 targeted questions spanning technical, project-specific, and behavioral categories — derived from the intersection of the resume content and the target role.
 
-## 🏗 The AI Architecture
+### Mock Interview Coach
+Interactive mock interview mode where users submit typed answers and receive real-time AI feedback on clarity, depth, confidence, and communication quality.
 
-The core of the application is a **Collaborative Multi-Agent System (CMAS)** built with LangGraph. Rather than relying on a single static prompt, the app utilizes 5 specialized AI agents that work together in a coordinated pipeline:
-
-1. **Resume Analyzer Agent:** Parses the document to extract structural data and initial quality assessments.
-2. **Skill Gap Agent:** Performs comparative analysis between the user's skills and the job requirements.
-3. **ATS Optimizer Agent:** Calculates a comprehensive ATS score across Keyword Match, Skill Coverage, Experience Relevance, and Formatting, generating a freshly optimized resume.
-4. **Interview Generator Agent:** Synthesizes the previous analyses to formulate highly context-aware, role-specific interview questions.
-5. **Mock Interview Agent:** Operates dynamically to assess user responses during practice sessions.
-
-### Agent Collaboration Flow
-Each agent builds sequentially on the previous agent's insights by appending to a shared, stateful graph without overwriting context. This results in a holistic, highly intelligent output generation.
+### Account & Preferences
+Firebase-authenticated accounts with email/password sign-up, email verification, password reset, and a theme preference toggle (dark / light mode with glassmorphism UI).
 
 ---
 
-## 🎨 A Premium User Experience
+## Architecture
 
-The application is designed with a modern, FAANG-level user interface featuring:
-- **Sleek Dark & Light Themes** highlighting premium aesthetics with glassmorphism.
-- **Intuitive Visualizations**, including animated circular ATS meters and responsive tabbed dashboards.
-- **Seamless Workflows** from drag-and-drop file uploads to one-click copy functionality for your newly optimized resume.
+### Multi-Agent Pipeline
+Built on **LangGraph**, the backend orchestrates five specialized AI agents in a sequential pipeline where each agent appends to a shared state graph:
 
----
+1. **Resume Analyzer** — Parses document structure, extracts skills, produces quality assessments
+2. **Skill Gap Analyzer** — Compares detected skills against job requirements
+3. **ATS Optimizer** — Scores ATS compatibility and generates an optimized resume
+4. **Interview Generator** — Synthesizes prior analyses into role-specific questions
+5. **Mock Interview Agent** — Dynamically evaluates user responses during practice sessions
 
-## 🛠 Built With
+A sixth standalone service, the **Cover Letter Generator**, operates outside the pipeline on demand.
 
-- **Frontend:** React, Vite, Custom Modern CSS
-- **Backend:** FastAPI, Python
-- **AI Orchestration:** LangGraph
-- **LLM Engine:** ChatGroq (`llama-3.3-70b-versatile`)
-- **Document Processing:** PDFPlumber, python-docx
+### Tech Stack
 
----
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, Vite, React Router, react-pdf, Custom CSS |
+| Backend | FastAPI, Python, LangGraph |
+| LLM | ChatGroq (`openai/gpt-oss-120b`) |
+| Auth | Firebase Admin SDK |
+| Database | Supabase PostgreSQL (psycopg2) |
+| Document Parsing | PDFPlumber, python-docx |
 
-## 🚀 Deployment (Vercel + Render)
+### Frontend Pages
 
-### 1) Deploy backend on Render
+| Page | Description |
+|------|-------------|
+| Home | Landing page with feature overview and CTA |
+| Workspace | Split-view: PDF preview (single-page navigation) + job description input |
+| Dashboard | Tabbed results — analysis, skill gap, ATS score, optimized resume, interview questions |
+| Cover Letter | Generate / regenerate / copy a tailored cover letter |
+| Account | Profile management, email verification, password reset, theme preference |
 
-This repo includes a ready-to-use [render.yaml](render.yaml).
-
-- In Render, choose **New +** → **Blueprint** and connect this repository.
-- Confirm service settings from `render.yaml`:
-	- `rootDir`: `backend`
-	- `buildCommand`: `pip install -r requirements.txt`
-	- `startCommand`: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-	- `healthCheckPath`: `/health`
-- Add required environment variables in Render:
-	- `GROQ_API_KEY`
-	- `DATABASE_URL` (if using Supabase/Postgres persistence)
-	- `FIREBASE_CREDENTIALS_JSON` (if Firebase Admin auth is enabled)
-	- `LANGCHAIN_API_KEY` (if LangSmith tracing is enabled)
-	- `CORS_ORIGINS` = your Vercel URL(s), comma-separated
-
-Example:
-
-`CORS_ORIGINS=https://your-frontend.vercel.app,https://www.yourdomain.com`
-
-After deploy, copy your backend URL (example: `https://smart-resume-backend.onrender.com`).
-
-### 2) Deploy frontend on Vercel
-
-This repo includes [frontend/vercel.json](frontend/vercel.json) for React Router rewrites.
-
-- In Vercel, import this repository.
-- Set **Root Directory** to `frontend`.
-- Build settings:
-	- Build Command: `npm run build`
-	- Output Directory: `dist`
-- Add frontend environment variable:
-	- `VITE_API_BASE` = your Render backend URL
-
-Example:
-
-`VITE_API_BASE=https://smart-resume-backend.onrender.com`
-
-### 3) Final wiring check
-
-- Redeploy frontend after setting `VITE_API_BASE`.
-- Ensure backend `CORS_ORIGINS` includes the exact Vercel domain.
-- Verify:
-	- Backend health: `https://<render-app>/health`
-	- Frontend app loads and API calls succeed.
+### Data Flow
+1. User uploads resume + job description in the **Workspace**
+2. Backend runs the 4-agent pipeline and returns combined results
+3. Results are displayed in the **Dashboard** with tabbed panels
+4. User can generate a **Cover Letter** or start a **Mock Interview** from the results
+5. All analyses, cover letters, and interview responses are persisted to the database
