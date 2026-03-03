@@ -6,6 +6,38 @@ import { auth } from '../config/firebase';
 
 export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
 
+/**
+ * Fetch with automatic retry + timeout to handle Render cold-starts.
+ * Retries on network errors and 502/503/504 responses.
+ */
+async function fetchWithRetry(url, options = {}, { retries = 2, baseDelay = 2000, timeout = 30000 } = {}) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
+
+        try {
+            const res = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(timer);
+
+            if ([502, 503, 504].includes(res.status) && attempt < retries) {
+                await new Promise(r => setTimeout(r, baseDelay * (attempt + 1)));
+                continue;
+            }
+            return res;
+        } catch (err) {
+            clearTimeout(timer);
+            if (attempt < retries && (err.name === 'AbortError' || err instanceof TypeError)) {
+                await new Promise(r => setTimeout(r, baseDelay * (attempt + 1)));
+                continue;
+            }
+            if (err.name === 'AbortError') {
+                throw new Error('The server is taking too long to respond. It may be starting up — please try again in a few seconds.');
+            }
+            throw new Error('Unable to reach the server. Please check your connection and try again.');
+        }
+    }
+}
+
 async function getAuthHeaders(extraHeaders = {}) {
     const currentUser = auth.currentUser;
     if (!currentUser) return extraHeaders;
@@ -29,11 +61,11 @@ export async function analyzeResume(file, jobDescription) {
     formData.append('job_description', jobDescription);
     const headers = await getAuthHeaders();
 
-    const res = await fetch(`${API_BASE}/analyze`, {
+    const res = await fetchWithRetry(`${API_BASE}/analyze`, {
         method: 'POST',
         headers,
         body: formData,
-    });
+    }, { timeout: 120000 });
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Server error' }));
@@ -60,11 +92,11 @@ export async function submitMockInterview(sessionId, question, answer) {
     });
 
     try {
-        const res = await fetch(`${API_BASE}/mock-interview`, {
+        const res = await fetchWithRetry(`${API_BASE}/mock-interview`, {
             method: 'POST',
             headers,
             body,
-        });
+        }, { timeout: 60000 });
 
         if (!res.ok) {
             const err = await res.json().catch(() => ({ detail: 'Server error' }));
@@ -74,11 +106,11 @@ export async function submitMockInterview(sessionId, question, answer) {
         return res.json();
     } catch (primaryErr) {
         try {
-            const fallbackRes = await fetch(`${API_BASE}/api/interview/evaluate`, {
+            const fallbackRes = await fetchWithRetry(`${API_BASE}/api/interview/evaluate`, {
                 method: 'POST',
                 headers,
                 body,
-            });
+            }, { timeout: 60000 });
 
             if (!fallbackRes.ok) {
                 const fallbackErr = await fallbackRes.json().catch(() => ({ detail: 'Server error' }));
@@ -114,7 +146,7 @@ export async function submitMockInterview(sessionId, question, answer) {
 export async function getSession(sessionId) {
     const headers = await getAuthHeaders();
 
-    const res = await fetch(`${API_BASE}/session/${sessionId}`, { headers });
+    const res = await fetchWithRetry(`${API_BASE}/session/${sessionId}`, { headers });
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Session not found' }));
@@ -132,11 +164,11 @@ export async function generateCoverLetter(sessionId, fallbackPayload = {}) {
         ...fallbackPayload,
     };
 
-    const res = await fetch(`${API_BASE}/cover-letter/generate`, {
+    const res = await fetchWithRetry(`${API_BASE}/cover-letter/generate`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
-    });
+    }, { timeout: 60000 });
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Cover letter generation failed' }));
@@ -149,7 +181,7 @@ export async function generateCoverLetter(sessionId, fallbackPayload = {}) {
 export async function getThemePreference() {
     const headers = await getAuthHeaders();
 
-    const res = await fetch(`${API_BASE}/user/preferences/theme`, {
+    const res = await fetchWithRetry(`${API_BASE}/user/preferences/theme`, {
         method: 'GET',
         headers,
     });
@@ -165,7 +197,7 @@ export async function getThemePreference() {
 export async function updateThemePreference(theme) {
     const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
 
-    const res = await fetch(`${API_BASE}/user/preferences/theme`, {
+    const res = await fetchWithRetry(`${API_BASE}/user/preferences/theme`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({ theme }),
@@ -187,11 +219,11 @@ async function createResumeFileBlob(format, { sessionId, optimizedResume }) {
         ? { optimized_resume: optimizedResume }
         : { session_id: sessionId };
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const res = await fetchWithRetry(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
-    });
+    }, { timeout: 45000 });
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'File generation failed' }));
