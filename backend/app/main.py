@@ -22,10 +22,21 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS — allow React dev server
+def _get_cors_origins() -> list[str]:
+    configured = os.getenv("CORS_ORIGINS", "").strip()
+    if configured:
+        return [origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()]
+
+    return [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

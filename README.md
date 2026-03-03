@@ -1,4 +1,4 @@
-2# 🚀 Smart Resume Builder + Interview Coach
+# 🚀 Smart Resume Builder + Interview Coach
 
 > **Collaborative Multi-Agent System (CMAS)** — AI-powered resume analysis, ATS scoring, skill-gap detection, and comprehensive interview coaching.
 
@@ -75,3 +75,54 @@ The application is designed with a modern, FAANG-level user interface featuring:
 - **AI Orchestration:** LangGraph
 - **LLM Engine:** ChatGroq (`llama-3.3-70b-versatile`)
 - **Document Processing:** PDFPlumber, python-docx
+
+---
+
+## 🚀 Deployment (Vercel + Render)
+
+### 1) Deploy backend on Render
+
+This repo includes a ready-to-use [render.yaml](render.yaml).
+
+- In Render, choose **New +** → **Blueprint** and connect this repository.
+- Confirm service settings from `render.yaml`:
+	- `rootDir`: `backend`
+	- `buildCommand`: `pip install -r requirements.txt`
+	- `startCommand`: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+	- `healthCheckPath`: `/health`
+- Add required environment variables in Render:
+	- `GROQ_API_KEY`
+	- `DATABASE_URL` (if using Supabase/Postgres persistence)
+	- `FIREBASE_CREDENTIALS_JSON` (if Firebase Admin auth is enabled)
+	- `LANGCHAIN_API_KEY` (if LangSmith tracing is enabled)
+	- `CORS_ORIGINS` = your Vercel URL(s), comma-separated
+
+Example:
+
+`CORS_ORIGINS=https://your-frontend.vercel.app,https://www.yourdomain.com`
+
+After deploy, copy your backend URL (example: `https://smart-resume-backend.onrender.com`).
+
+### 2) Deploy frontend on Vercel
+
+This repo includes [frontend/vercel.json](frontend/vercel.json) for React Router rewrites.
+
+- In Vercel, import this repository.
+- Set **Root Directory** to `frontend`.
+- Build settings:
+	- Build Command: `npm run build`
+	- Output Directory: `dist`
+- Add frontend environment variable:
+	- `VITE_API_BASE` = your Render backend URL
+
+Example:
+
+`VITE_API_BASE=https://smart-resume-backend.onrender.com`
+
+### 3) Final wiring check
+
+- Redeploy frontend after setting `VITE_API_BASE`.
+- Ensure backend `CORS_ORIGINS` includes the exact Vercel domain.
+- Verify:
+	- Backend health: `https://<render-app>/health`
+	- Frontend app loads and API calls succeed.
