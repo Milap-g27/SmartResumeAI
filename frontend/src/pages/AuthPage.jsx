@@ -49,11 +49,11 @@ export default function AuthPage() {
 
             if (mode === MODES.LOGIN) {
                 await login(email, password);
+                navigate('/home');
             } else {
                 await signup(email, password);
+                navigate('/account');
             }
-
-            navigate('/home');
         } catch (err) {
             const msg = err?.message || 'Authentication failed.';
             // Clean up Firebase error messages

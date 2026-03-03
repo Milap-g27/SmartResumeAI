@@ -17,6 +17,11 @@ env/
 .env
 .env.*
 
+# ── Firebase Admin Secrets ──────────────────────
+firebase-service-account.json
+*service-account*.json
+backend/firebase-service-account.json
+
 # ── Uploads (user files) ────────────────────────
 uploads/
 

@@ -10,8 +10,21 @@ CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     firebase_uid VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
+    theme_preference VARCHAR(10) DEFAULT 'system' CHECK (theme_preference IN ('light', 'dark', 'system')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS theme_preference VARCHAR(10) DEFAULT 'system' CHECK (theme_preference IN ('light', 'dark', 'system'));
+
+ALTER TABLE users
+ALTER COLUMN theme_preference SET DEFAULT 'system';
+
+ALTER TABLE users
+DROP CONSTRAINT IF EXISTS users_theme_preference_check;
+
+ALTER TABLE users
+ADD CONSTRAINT users_theme_preference_check CHECK (theme_preference IN ('light', 'dark', 'system'));
 
 -- Uploaded resumes
 CREATE TABLE IF NOT EXISTS resumes (
@@ -41,10 +54,21 @@ CREATE TABLE IF NOT EXISTS interview_responses (
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Generated cover letters
+CREATE TABLE IF NOT EXISTS cover_letters (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    resume_id UUID REFERENCES resumes(id) ON DELETE SET NULL,
+    job_description TEXT NOT NULL,
+    cover_letter_text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_resumes_user_id ON resumes(user_id);
 CREATE INDEX IF NOT EXISTS idx_analyses_resume_id ON analyses(resume_id);
 CREATE INDEX IF NOT EXISTS idx_interview_responses_user_id ON interview_responses(user_id);
+CREATE INDEX IF NOT EXISTS idx_cover_letters_user_id ON cover_letters(user_id);
 """
 
 if __name__ == "__main__":

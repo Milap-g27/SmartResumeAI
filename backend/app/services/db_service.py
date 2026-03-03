@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from app.db.database import get_db
 
 def execute_insert(query: str, params: tuple = None) -> str | None:
@@ -10,6 +11,11 @@ def execute_insert(query: str, params: tuple = None) -> str | None:
     try:
         from app.db.database import DB_AVAILABLE
         if not DB_AVAILABLE:
+            print("Database insertion skipped: psycopg2 is not installed.")
+            return None
+
+        if not os.getenv("DATABASE_URL"):
+            print("Database insertion skipped: DATABASE_URL is not configured.")
             return None
             
         with get_db() as conn:
@@ -87,3 +93,80 @@ def insert_interview_response(user_id: str | None, question: str, answer: str, e
         answer,
         json.dumps(evaluation_json) if evaluation_json else None
     ))
+
+
+def insert_cover_letter(
+    user_id: str | None,
+    resume_id: str | None,
+    job_description: str,
+    cover_letter_text: str,
+) -> str | None:
+    """Insert generated cover letter into the cover_letters dataset."""
+    if not user_id:
+        user_id = upsert_user("anonymous_session_user", "anonymous@smartresume.ai")
+        if not user_id:
+            return None
+
+    query = """
+        INSERT INTO cover_letters (user_id, resume_id, job_description, cover_letter_text)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id;
+    """
+    return execute_insert(query, (user_id, resume_id, job_description, cover_letter_text))
+
+
+def get_user_theme_preference(firebase_uid: str, email: str) -> str | None:
+    """Get persisted user theme preference by Firebase UID."""
+    try:
+        from app.db.database import DB_AVAILABLE
+        if not DB_AVAILABLE or not os.getenv("DATABASE_URL"):
+            return None
+
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT theme_preference FROM users WHERE firebase_uid = %s;",
+                (firebase_uid,),
+            )
+            row = cur.fetchone()
+
+            if row and row.get("theme_preference") in ("light", "dark", "system"):
+                return row.get("theme_preference")
+
+        upsert_user(firebase_uid, email)
+        return None
+    except Exception as e:
+        print(f"Theme preference fetch error: {e}")
+        return None
+
+
+def update_user_theme_preference(firebase_uid: str, email: str, theme: str) -> str | None:
+    """Persist user theme preference and return saved value."""
+    if theme not in ("light", "dark", "system"):
+        return None
+
+    try:
+        from app.db.database import DB_AVAILABLE
+        if not DB_AVAILABLE or not os.getenv("DATABASE_URL"):
+            return None
+
+        upsert_user(firebase_uid, email)
+
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE users
+                SET theme_preference = %s
+                WHERE firebase_uid = %s
+                RETURNING theme_preference;
+                """,
+                (theme, firebase_uid),
+            )
+            row = cur.fetchone()
+            if row:
+                return row.get("theme_preference")
+            return None
+    except Exception as e:
+        print(f"Theme preference update error: {e}")
+        return None

@@ -5,6 +5,7 @@ Parses resume text, detects sections, evaluates structure, and identifies weak b
 from __future__ import annotations
 
 import json
+import re
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
@@ -20,6 +21,7 @@ SYSTEM_PROMPT = """You are a Senior Resume Analyst AI. You receive raw resume te
 5. Identify weak bullet points (vague, no metrics, no action verbs, no impact).
 6. Rate overall resume quality 0-10.
 7. Provide actionable recommendations.
+8. In "skills_found", include only professional technical/business skills. Do NOT include AI chat assistants or productivity chat tools (e.g., ChatGPT, Claude, Gemini, Cursor, Perplexity).
 
 **You MUST return ONLY valid JSON** matching this exact schema (no markdown, no code fences):
 {
@@ -43,6 +45,52 @@ SYSTEM_PROMPT = """You are a Senior Resume Analyst AI. You receive raw resume te
 """
 
 
+NON_SKILL_TOOLS = {
+    "chatgpt",
+    "gemini",
+    "claude",
+    "perplexity",
+    "cursor",
+    "cursor ai",
+    "github copilot",
+    "copilot chat",
+}
+
+
+def _normalize_skill_text(skill: str) -> str:
+    return re.sub(r"\s+", " ", skill.strip().lower())
+
+
+def _is_non_skill_tool(skill: str) -> bool:
+    normalized = _normalize_skill_text(skill)
+    return normalized in NON_SKILL_TOOLS
+
+
+def _sanitize_skills(skills: list[str]) -> list[str]:
+    sanitized: list[str] = []
+    seen: set[str] = set()
+
+    for skill in skills:
+        if not isinstance(skill, str):
+            continue
+
+        clean = skill.strip().strip("-•")
+        if not clean:
+            continue
+
+        if _is_non_skill_tool(clean):
+            continue
+
+        key = _normalize_skill_text(clean)
+        if key in seen:
+            continue
+
+        seen.add(key)
+        sanitized.append(clean)
+
+    return sanitized
+
+
 def resume_analyzer_agent(state: AgentState) -> AgentState:
     """Analyze the resume and return structured insights."""
     llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
@@ -64,6 +112,8 @@ def resume_analyzer_agent(state: AgentState) -> AgentState:
 
     try:
         parsed = json.loads(content)
+        if isinstance(parsed, dict):
+            parsed["skills_found"] = _sanitize_skills(parsed.get("skills_found", []))
     except json.JSONDecodeError:
         parsed = {
             "error": "Failed to parse resume analysis",

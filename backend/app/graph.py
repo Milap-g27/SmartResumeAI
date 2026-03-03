@@ -14,7 +14,7 @@ from app.agents.resume_analyzer import resume_analyzer_agent
 from app.agents.skill_gap import skill_gap_agent
 from app.agents.ats_optimizer import ats_optimizer_agent
 from app.agents.interview_generator import interview_generator_agent
-from app.agents.mock_interview import mock_interview_agent
+from app.agents.mock_interview import mock_interview_agent 
 
 
 # ── Analysis Pipeline ───────────────────────────────────────────────

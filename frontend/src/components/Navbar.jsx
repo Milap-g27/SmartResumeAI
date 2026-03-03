@@ -1,24 +1,37 @@
 /**
  * Navbar — Premium frosted-glass navigation bar.
  * Shows Home + Sign In/Get Started for unauthenticated users.
- * Shows Workspace/Dashboard + user info for authenticated users.
+ * Shows Workspace/Dashboard/Cover Letter + user info for authenticated users.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../config/AuthContext';
 import { useTheme } from '../config/ThemeContext';
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
+    const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const { user, logout } = useAuth();
-    const { theme, toggleTheme } = useTheme();
+    const { theme, themeMode, setThemeMode, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
+    const accountMenuRef = useRef(null);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 40);
         window.addEventListener('scroll', onScroll, { passive: true });
         return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
+    useEffect(() => {
+        const handleOutsideClick = (event) => {
+            if (!accountMenuRef.current?.contains(event.target)) {
+                setAccountMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
     }, []);
 
     // Don't show navbar on auth page
@@ -64,6 +77,13 @@ export default function Navbar() {
                                 <span className="material-icons-round" style={{ fontSize: '16px' }}>dashboard</span>
                                 Dashboard
                             </button>
+                            <button
+                                className={`navbar__link ${isActive('/cover-letter') ? 'navbar__link--active' : ''}`}
+                                onClick={() => navigate('/cover-letter')}
+                            >
+                                <span className="material-icons-round" style={{ fontSize: '16px' }}>edit_note</span>
+                                Cover Letter
+                            </button>
                         </>
                     ) : (
                         <>
@@ -101,8 +121,106 @@ export default function Navbar() {
                     </button>
 
                     {user ? (
-                        <div className="navbar__user">
-                            <span className="navbar__user-email">{user.email?.split('@')[0]}</span>
+                        <div className="navbar__user" ref={accountMenuRef}>
+                            <button
+                                className="navbar__user-email navbar__user-email-btn"
+                                onClick={() => {
+                                    setAccountMenuOpen(false);
+                                    navigate('/account');
+                                }}
+                                title="Open account settings"
+                            >
+                                {user.email?.split('@')[0]}
+                            </button>
+                            <button
+                                className="navbar__account-btn"
+                                onClick={() => setAccountMenuOpen((prev) => !prev)}
+                                title="Open account menu"
+                            >
+                                <span className="material-icons-round" style={{ fontSize: '17px' }}>manage_accounts</span>
+                            </button>
+
+                            {accountMenuOpen && (
+                                <div className="navbar__account-menu">
+                                    <button
+                                        className="navbar__account-menu-item"
+                                        onClick={() => {
+                                            setAccountMenuOpen(false);
+                                            navigate('/account');
+                                        }}
+                                    >
+                                        <span className="material-icons-round">manage_accounts</span>
+                                        Account Overview
+                                    </button>
+                                    <button
+                                        className="navbar__account-menu-item"
+                                        onClick={() => {
+                                            setAccountMenuOpen(false);
+                                            navigate('/account/email-verification');
+                                        }}
+                                    >
+                                        <span className="material-icons-round">verified_user</span>
+                                        Email Verification
+                                    </button>
+                                    <button
+                                        className="navbar__account-menu-item"
+                                        onClick={() => {
+                                            setAccountMenuOpen(false);
+                                            navigate('/account/password-reset');
+                                        }}
+                                    >
+                                        <span className="material-icons-round">lock_reset</span>
+                                        Password Reset
+                                    </button>
+                                    <button
+                                        className="navbar__account-menu-item"
+                                        onClick={() => {
+                                            setAccountMenuOpen(false);
+                                            navigate('/account/change-email');
+                                        }}
+                                    >
+                                        <span className="material-icons-round">alternate_email</span>
+                                        Change Email
+                                    </button>
+                                    <div className="navbar__account-menu-item navbar__account-menu-item--has-submenu">
+                                        <div className="navbar__account-menu-item-main">
+                                            <span className="material-icons-round">palette</span>
+                                            Theme Preference
+                                            <span className="material-icons-round navbar__submenu-arrow">chevron_right</span>
+                                        </div>
+                                        <div className="navbar__account-submenu">
+                                            <button
+                                                className={`navbar__account-submenu-item ${themeMode === 'light' ? 'navbar__account-submenu-item--active' : ''}`}
+                                                onClick={() => {
+                                                    setThemeMode('light');
+                                                    setAccountMenuOpen(false);
+                                                }}
+                                            >
+                                                Light
+                                            </button>
+                                            <button
+                                                className={`navbar__account-submenu-item ${themeMode === 'dark' ? 'navbar__account-submenu-item--active' : ''}`}
+                                                onClick={() => {
+                                                    setThemeMode('dark');
+                                                    setAccountMenuOpen(false);
+                                                }}
+                                            >
+                                                Dark
+                                            </button>
+                                            <button
+                                                className={`navbar__account-submenu-item ${themeMode === 'system' ? 'navbar__account-submenu-item--active' : ''}`}
+                                                onClick={() => {
+                                                    setThemeMode('system');
+                                                    setAccountMenuOpen(false);
+                                                }}
+                                            >
+                                                System
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <button className="navbar__logout" onClick={handleLogout} title="Sign out">
                                 <span className="material-icons-round" style={{ fontSize: '18px' }}>logout</span>
                             </button>

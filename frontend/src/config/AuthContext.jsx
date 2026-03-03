@@ -10,6 +10,8 @@ import {
     signOut,
     sendPasswordResetEmail,
     signInWithPopup,
+    sendEmailVerification,
+    verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 
@@ -30,8 +32,11 @@ export function AuthProvider({ children }) {
     const login = (email, password) =>
         signInWithEmailAndPassword(auth, email, password);
 
-    const signup = (email, password) =>
-        createUserWithEmailAndPassword(auth, email, password);
+    const signup = async (email, password) => {
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(credential.user);
+        return credential;
+    };
 
     const logout = () => signOut(auth);
 
@@ -39,7 +44,34 @@ export function AuthProvider({ children }) {
 
     const googleLogin = () => signInWithPopup(auth, googleProvider);
 
-    const value = { user, loading, login, signup, logout, resetPassword, googleLogin };
+    const resendVerificationEmail = async () => {
+        if (!auth.currentUser) throw new Error('No authenticated user found.');
+        await sendEmailVerification(auth.currentUser);
+    };
+
+    const changeEmail = async (newEmail) => {
+        if (!auth.currentUser) throw new Error('No authenticated user found.');
+        await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
+    };
+
+    const refreshUser = async () => {
+        if (!auth.currentUser) return;
+        await auth.currentUser.reload();
+        setUser({ ...auth.currentUser });
+    };
+
+    const value = {
+        user,
+        loading,
+        login,
+        signup,
+        logout,
+        resetPassword,
+        googleLogin,
+        resendVerificationEmail,
+        changeEmail,
+        refreshUser,
+    };
 
     return (
         <AuthContext.Provider value={value}>

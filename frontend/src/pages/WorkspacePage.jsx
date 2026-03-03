@@ -8,11 +8,16 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PdfViewer from '../components/resume/PdfViewer';
 import { analyzeResume } from '../api/client';
+import { useWorkspace } from '../config/WorkspaceContext';
 
 export default function WorkspacePage() {
     const navigate = useNavigate();
-    const [file, setFile] = useState(null);
-    const [jobDesc, setJobDesc] = useState('');
+    const {
+        workspaceFile: file,
+        setWorkspaceFile: setFile,
+        workspaceJobDesc: jobDesc,
+        setWorkspaceJobDesc: setJobDesc,
+    } = useWorkspace();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [dragOver, setDragOver] = useState(false);
@@ -39,6 +44,7 @@ export default function WorkspacePage() {
 
         try {
             const data = await analyzeResume(file, jobDesc);
+            sessionStorage.setItem('latestDashboardData', JSON.stringify(data));
             navigate('/dashboard', { state: data });
         } catch (err) {
             setError(err.message || 'Analysis failed. Please try again.');
@@ -78,7 +84,7 @@ export default function WorkspacePage() {
                     <div className="workspace__panel-body">
                         {file ? (
                             pdfUrl ? (
-                                <PdfViewer fileUrl={pdfUrl} />
+                                <PdfViewer fileUrl={pdfUrl} singlePageNavigation />
                             ) : (
                                 <div className="pdf-empty">
                                     <span className="material-icons-round" style={{ fontSize: '3rem', color: 'var(--accent-emerald)' }}>check_circle</span>

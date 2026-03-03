@@ -17,16 +17,28 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const [activeTab, setActiveTab] = useState(0);
-    const data = location.state;
+    const [data, setData] = useState(location.state || null);
 
     useEffect(() => {
-        if (!data) {
-            navigate('/workspace', { replace: true });
-        } else {
-            // Clear the history state so a refresh will result in no data
+        if (location.state) {
+            setData(location.state);
+            sessionStorage.setItem('latestDashboardData', JSON.stringify(location.state));
             window.history.replaceState({}, document.title);
+            return;
         }
-    }, [data, navigate]);
+
+        const cached = sessionStorage.getItem('latestDashboardData');
+        if (cached) {
+            try {
+                setData(JSON.parse(cached));
+                return;
+            } catch {
+                sessionStorage.removeItem('latestDashboardData');
+            }
+        }
+
+        navigate('/workspace', { replace: true });
+    }, [location.state, navigate]);
 
     if (!data) return null;
 
@@ -289,6 +301,7 @@ export default function DashboardPage() {
                         ))}
                     </div>
                 )}
+
             </TabPanel>
         </div>
     );

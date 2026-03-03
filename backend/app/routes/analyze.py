@@ -9,7 +9,7 @@ import traceback
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
 
 from app.services.file_parser import parse_resume
-from app.services.session_store import create_session, update_session
+from app.services.session_store import create_session
 from app.services.db_service import upsert_user, insert_resume, insert_analysis
 from app.graph import run_pipeline
 
@@ -76,7 +76,14 @@ async def analyze_resume(
             insert_analysis(resume_id, ats_score, skill_gap, optimized_resume)
 
         # ── Store session ───────────────────────────────────────────
-        session_id = create_session(result)
+        session_payload = {
+            **result,
+            "resume_text": resume_text,
+            "job_description": job_description,
+            "resume_id": resume_id,
+            "user_db_id": user_db_id,
+        }
+        session_id = create_session(session_payload)
 
         return {
             "session_id": session_id,

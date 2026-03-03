@@ -2,15 +2,16 @@
  * PdfViewer — Renders uploaded PDF/DOCX using react-pdf.
  * Multi-page navigation, zoom, smooth page transitions.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-export default function PdfViewer({ fileUrl }) {
+export default function PdfViewer({ fileUrl, singlePageNavigation = false }) {
     const [numPages, setNumPages] = useState(null);
+    const [pageNumber, setPageNumber] = useState(1);
     const [scale, setScale] = useState(1.0);
     const [loadError, setLoadError] = useState(null);
     const [containerWidth, setContainerWidth] = useState(null);
@@ -31,6 +32,7 @@ export default function PdfViewer({ fileUrl }) {
 
     const onDocumentLoadSuccess = ({ numPages: total }) => {
         setNumPages(total);
+        setPageNumber((current) => Math.min(Math.max(current, 1), total || 1));
         setLoadError(null);
     };
 
@@ -39,11 +41,23 @@ export default function PdfViewer({ fileUrl }) {
         console.error('PDF load error:', error);
     };
 
-    const fileSrc = useMemo(() => {
-        if (!fileUrl) return null;
-        if (typeof fileUrl === 'string') return fileUrl;
-        // File object — create object URL
-        return URL.createObjectURL(fileUrl);
+    const [fileSrc, setFileSrc] = React.useState(null);
+
+    React.useEffect(() => {
+        if (!fileUrl) {
+            setFileSrc(null);
+            return;
+        }
+        if (typeof fileUrl === 'string') {
+            setFileSrc(fileUrl);
+            setPageNumber(1);
+            return;
+        }
+        // File object — create a fresh object URL on every mount
+        const url = URL.createObjectURL(fileUrl);
+        setFileSrc(url);
+        setPageNumber(1);
+        return () => URL.revokeObjectURL(url);
     }, [fileUrl]);
 
     if (!fileUrl) {
@@ -60,9 +74,33 @@ export default function PdfViewer({ fileUrl }) {
             {/* Controls Bar */}
             <div className="pdf-controls">
                 <div className="pdf-nav">
-                    <span className="pdf-page-info">
-                        {numPages ? `${numPages} Pages` : 'Loading...'}
-                    </span>
+                    {singlePageNavigation ? (
+                        <>
+                            <button
+                                className="pdf-nav-btn"
+                                onClick={() => setPageNumber((p) => Math.max(p - 1, 1))}
+                                disabled={!numPages || pageNumber <= 1}
+                                title="Previous page"
+                            >
+                                &lt;
+                            </button>
+                            <span className="pdf-page-info">
+                                {numPages ? `${pageNumber}/${numPages}` : 'Loading...'}
+                            </span>
+                            <button
+                                className="pdf-nav-btn"
+                                onClick={() => setPageNumber((p) => Math.min(p + 1, numPages || 1))}
+                                disabled={!numPages || pageNumber >= (numPages || 1)}
+                                title="Next page"
+                            >
+                                &gt;
+                            </button>
+                        </>
+                    ) : (
+                        <span className="pdf-page-info">
+                            {numPages ? `${numPages} Pages` : 'Loading...'}
+                        </span>
+                    )}
                 </div>
                 <div className="pdf-zoom">
                     <button
@@ -102,19 +140,33 @@ export default function PdfViewer({ fileUrl }) {
                             </div>
                         }
                     >
-                        <div className="pdf-pages-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            {Array.from({ length: numPages || 0 }, (_, index) => (
+                        {singlePageNavigation ? (
+                            <div className="pdf-pages-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <Page
-                                    key={`page_${index + 1}`}
-                                    pageNumber={index + 1}
+                                    key={`page_${pageNumber}`}
+                                    pageNumber={pageNumber}
                                     scale={scale}
                                     width={containerWidth || undefined}
                                     renderTextLayer={false}
                                     renderAnnotationLayer={false}
                                     className="pdf-page"
                                 />
-                            ))}
-                        </div>
+                            </div>
+                        ) : (
+                            <div className="pdf-pages-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {Array.from({ length: numPages || 0 }, (_, index) => (
+                                    <Page
+                                        key={`page_${index + 1}`}
+                                        pageNumber={index + 1}
+                                        scale={scale}
+                                        width={containerWidth || undefined}
+                                        renderTextLayer={false}
+                                        renderAnnotationLayer={false}
+                                        className="pdf-page"
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </Document>
                 )}
             </div>

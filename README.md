@@ -1,4 +1,4 @@
-# 🚀 Smart Resume Builder + Interview Coach
+2# 🚀 Smart Resume Builder + Interview Coach
 
 > **Collaborative Multi-Agent System (CMAS)** — AI-powered resume analysis, ATS scoring, skill-gap detection, and comprehensive interview coaching.
 

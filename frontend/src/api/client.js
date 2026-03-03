@@ -2,7 +2,20 @@
  * API client — communicates with the FastAPI backend.
  */
 
+import { auth } from '../config/firebase';
+
 export const API_BASE = 'http://localhost:8000';
+
+async function getAuthHeaders(extraHeaders = {}) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return extraHeaders;
+
+    const token = await currentUser.getIdToken();
+    return {
+        ...extraHeaders,
+        Authorization: `Bearer ${token}`,
+    };
+}
 
 /**
  * Upload resume + job description and run the full analysis pipeline.
@@ -14,9 +27,11 @@ export async function analyzeResume(file, jobDescription) {
     const formData = new FormData();
     formData.append('resume', file);
     formData.append('job_description', jobDescription);
+    const headers = await getAuthHeaders();
 
     const res = await fetch(`${API_BASE}/analyze`, {
         method: 'POST',
+        headers,
         body: formData,
     });
 
@@ -36,9 +51,11 @@ export async function analyzeResume(file, jobDescription) {
  * @returns {Promise<Object>} Feedback result
  */
 export async function submitMockInterview(sessionId, question, answer) {
+    const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
+
     const res = await fetch(`${API_BASE}/mock-interview`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
             session_id: sessionId,
             question,
@@ -60,10 +77,62 @@ export async function submitMockInterview(sessionId, question, answer) {
  * @returns {Promise<Object>}
  */
 export async function getSession(sessionId) {
-    const res = await fetch(`${API_BASE}/session/${sessionId}`);
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(`${API_BASE}/session/${sessionId}`, { headers });
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Session not found' }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    return res.json();
+}
+
+export async function generateCoverLetter(sessionId) {
+    const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
+
+    const res = await fetch(`${API_BASE}/cover-letter/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ session_id: sessionId }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Cover letter generation failed' }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    return res.json();
+}
+
+export async function getThemePreference() {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(`${API_BASE}/user/preferences/theme`, {
+        method: 'GET',
+        headers,
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Failed to load theme preference' }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    return res.json();
+}
+
+export async function updateThemePreference(theme) {
+    const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
+
+    const res = await fetch(`${API_BASE}/user/preferences/theme`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ theme }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Failed to save theme preference' }));
         throw new Error(err.detail || `HTTP ${res.status}`);
     }
 

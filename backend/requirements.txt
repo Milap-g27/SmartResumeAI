@@ -9,3 +9,5 @@ langchain-core
 pdfplumber
 python-docx
 reportlab
+psycopg2-binary
+firebase-admin
